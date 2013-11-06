@@ -288,4 +288,9 @@ config AIO_OPTIMIZATION
 	help
  	  An experimental AIO FS kernel optimization
 
+config AIO_OPTIMIZATION
+	bool "AIO kernel optimization patches"
+	default y
+	help
+	  An experimental AIO FS kernel optimization
 endmenu
