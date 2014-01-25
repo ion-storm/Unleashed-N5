@@ -379,7 +379,7 @@ static int bq24192_set_input_i_limit(struct bq24192_chip *chip, int ma)
 #ifdef CONFIG_FORCE_FAST_CHARGE
 	if (custom_ma > chip->max_input_i_ma) {
 		chip->saved_input_i_ma = custom_ma;
-		pr_info("reject %d mA due to therm mitigation\n", custom_ma);
+		pr_debug("reject %d mA due to therm mitigation\n", custom_ma);
 		return 0;
 	}
 
@@ -387,7 +387,7 @@ static int bq24192_set_input_i_limit(struct bq24192_chip *chip, int ma)
 		chip->saved_input_i_ma = custom_ma;
 
 	chip->therm_mitigation = false;
-	pr_info("input current limit = %d setting 0x%02x\n", custom_ma, temp);
+	pr_debug("input current limit = %d setting 0x%02x\n", custom_ma, temp);
 #else
 	if (ma > chip->max_input_i_ma) {
 		chip->saved_input_i_ma = ma;
