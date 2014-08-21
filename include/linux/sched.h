@@ -1889,6 +1889,9 @@ extern void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *
 
 extern int task_free_register(struct notifier_block *n);
 extern int task_free_unregister(struct notifier_block *n);
+extern int sched_set_window(u64 window_start, unsigned int window_size);
+static inline void sched_set_io_is_busy(int val) {};
+extern unsigned long sched_get_busy(int cpu);
 
 /*
  * Per process flags
