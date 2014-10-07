@@ -463,6 +463,9 @@ struct rq {
 	u64 age_stamp;
 	u64 idle_stamp;
 	u64 avg_idle;
+
+	/* Set to max idle balance cost for any one sched domain */
+	u64 max_idle_balance_cost;
 #endif
 
 #ifdef CONFIG_SCHED_FREQ_INPUT
