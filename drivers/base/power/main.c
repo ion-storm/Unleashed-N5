@@ -637,6 +637,7 @@ static int device_resume(struct device *dev, pm_message_t state, bool async)
 
  Unlock:
 	device_unlock(dev);
+	dpm_wd_clear(&wd);
 
  Complete:
 	complete_all(&dev->power.completion);
@@ -662,6 +663,11 @@ static bool is_async(struct device *dev)
 	return dev->power.async_suspend && pm_async_enabled
 		&& !pm_trace_is_enabled();
 }
+
+#if defined (CONFIG_MACH_LGE)
+static int nsec64_measure_resume_spend = 10000;// over 10ms
+module_param_named(resume_spend, nsec64_measure_resume_spend, int, S_IRUGO | S_IWUSR | S_IWGRP);
+#endif
 
 /**
  *	dpm_drv_timeout - Driver suspend / resume watchdog handler
@@ -1097,13 +1103,7 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
 	if (dev->power.syscore)
 		goto Complete;
 
-	data.dev = dev;
-	data.tsk = get_current();
-	init_timer_on_stack(&timer);
-	timer.expires = jiffies + HZ * 12;
-	timer.function = dpm_drv_timeout;
-	timer.data = (unsigned long)&data;
-	add_timer(&timer);
+	dpm_wd_set(&wd, dev);
 
 	device_lock(dev);
 
