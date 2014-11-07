@@ -637,6 +637,8 @@ static int device_resume(struct device *dev, pm_message_t state, bool async)
 
  Unlock:
 	device_unlock(dev);
+
+ Complete:
 	complete_all(&dev->power.completion);
 
 	TRACE_RESUME(error);
@@ -945,6 +947,9 @@ static int device_suspend_late(struct device *dev, pm_message_t state)
 	pm_callback_t callback = NULL;
 	char *info = NULL;
 
+	if (dev->power.syscore)
+		return 0;
+
 	if (dev->pm_domain) {
 		info = "late power domain ";
 		callback = pm_late_early_op(&dev->pm_domain->ops, state);
@@ -1086,6 +1091,9 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
 		async_error = -EBUSY;
 		goto Complete;
 	}
+
+	if (dev->power.syscore)
+		goto Complete;
 
 	data.dev = dev;
 	data.tsk = get_current();
