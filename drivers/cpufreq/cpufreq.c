@@ -954,12 +954,9 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
+cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_ro(policy_min_freq);
 cpufreq_freq_attr_ro(policy_max_freq);
-#ifdef CONFIG_MSM_CPU_VOLTAGE_CONTROL
-cpufreq_freq_attr_rw(UV_mV_table);
-#endif
-cpufreq_freq_attr_rw(gpu_mv_table);
 #ifdef CONFIG_MULTI_CPU_POLICY_LIMIT
 define_one_global_rw(scaling_min_freq_all_cpus);
 define_one_global_rw(scaling_max_freq_all_cpus);
@@ -988,12 +985,9 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
+	&UV_mV_table.attr,
 	&policy_min_freq.attr,
 	&policy_max_freq.attr,
-#ifdef CONFIG_MSM_CPU_VOLTAGE_CONTROL
-	&UV_mV_table.attr,
-#endif
-	&gpu_mv_table.attr,
 	NULL
 };
 
