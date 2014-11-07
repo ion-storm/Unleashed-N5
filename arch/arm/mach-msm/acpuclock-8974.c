@@ -55,7 +55,7 @@ static struct scalable scalable[] __initdata = {
 		.hfpll_phys_base = 0xF908A000,
 		.l2cpmr_iaddr = 0x4501,
 		.sec_clk_sel = 2,
-		.vreg[VREG_CORE] = { "krait0",     1140000 },
+		.vreg[VREG_CORE] = { "krait0",     1100000 },
 		.vreg[VREG_MEM]  = { "krait0_mem", 1050000 },
 		.vreg[VREG_DIG]  = { "krait0_dig", LVL_HIGH },
 		.vreg[VREG_HFPLL_A] = { "krait0_hfpll", 1800000 },
@@ -64,7 +64,7 @@ static struct scalable scalable[] __initdata = {
 		.hfpll_phys_base = 0xF909A000,
 		.l2cpmr_iaddr = 0x5501,
 		.sec_clk_sel = 2,
-		.vreg[VREG_CORE] = { "krait1",     1140000 },
+		.vreg[VREG_CORE] = { "krait1",     1100000 },
 		.vreg[VREG_MEM]  = { "krait1_mem", 1050000 },
 		.vreg[VREG_DIG]  = { "krait1_dig", LVL_HIGH },
 		.vreg[VREG_HFPLL_A] = { "krait1_hfpll", 1800000 },
@@ -73,7 +73,7 @@ static struct scalable scalable[] __initdata = {
 		.hfpll_phys_base = 0xF90AA000,
 		.l2cpmr_iaddr = 0x6501,
 		.sec_clk_sel = 2,
-		.vreg[VREG_CORE] = { "krait2",     1140000 },
+		.vreg[VREG_CORE] = { "krait2",     1100000 },
 		.vreg[VREG_MEM]  = { "krait2_mem", 1050000 },
 		.vreg[VREG_DIG]  = { "krait2_dig", LVL_HIGH },
 		.vreg[VREG_HFPLL_A] = { "krait2_hfpll", 1800000 },
@@ -82,7 +82,7 @@ static struct scalable scalable[] __initdata = {
 		.hfpll_phys_base = 0xF90BA000,
 		.l2cpmr_iaddr = 0x7501,
 		.sec_clk_sel = 2,
-		.vreg[VREG_CORE] = { "krait3",     1140000 },
+		.vreg[VREG_CORE] = { "krait3",     1100000 },
 		.vreg[VREG_MEM]  = { "krait3_mem", 1050000 },
 		.vreg[VREG_DIG]  = { "krait3_dig", LVL_HIGH },
 		.vreg[VREG_HFPLL_A] = { "krait3_hfpll", 1800000 },
@@ -686,6 +686,8 @@ static struct acpu_level acpu_freq_tbl_2p2g_pvs6[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs0[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  800000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  800000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  800000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  800000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  800000, 101 },
@@ -722,6 +724,8 @@ static struct acpu_level acpu_freq_tbl_2p3g_pvs0[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs1[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  800000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  800000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  800000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  800000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  800000, 101 },
@@ -759,6 +763,8 @@ static struct acpu_level acpu_freq_tbl_2p3g_pvs1[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs2[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  750000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  750000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  775000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  775000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  775000, 101 },
@@ -796,6 +802,8 @@ static struct acpu_level acpu_freq_tbl_2p3g_pvs2[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs3[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  750000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  750000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  775000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  775000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  775000, 101 },
@@ -833,6 +841,8 @@ static struct acpu_level acpu_freq_tbl_2p3g_pvs3[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs4[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  750000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  750000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  775000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  775000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  775000, 101 },
@@ -870,6 +880,8 @@ static struct acpu_level acpu_freq_tbl_2p3g_pvs4[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs5[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  750000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  750000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  750000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  750000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  750000, 101 },
@@ -907,6 +919,8 @@ static struct acpu_level acpu_freq_tbl_2p3g_pvs5[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_2p3g_pvs6[] __initdata = {
+	{ 1, {   96000, HFPLL, 2,  10 },  L2(0),  750000,   1 },
+	{ 1, {  192000, HFPLL, 2,  20 },  L2(0),  750000,   1 },
 	{ 1, {  300000, PLL_0, 0,   0 },  L2(0),  750000,  72 },
 	{ 0, {  345600, HFPLL, 2,  36 },  L2(1),  750000,  83 },
 	{ 1, {  422400, HFPLL, 2,  44 },  L2(2),  750000, 101 },
