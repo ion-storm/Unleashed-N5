@@ -840,4 +840,3 @@ static int __init vfp_rootfs_init(void)
 }
 
 core_initcall(vfp_init);
-rootfs_initcall(vfp_rootfs_init);
