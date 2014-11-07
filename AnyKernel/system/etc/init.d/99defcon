@@ -1,0 +1,214 @@
+#!/system/bin/sh
+bb=busybox
+echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
+
+# Disable mpdecision & thermald & logcat
+	stop thermald
+	stop mpdecision
+	echo 1 > /sys/module/msm_thermal/parameters/enabled
+	echo "[defcon] thermald & mpdecision disabled" | tee /dev/kmsg
+	echo "[defcon] Intelli-Thermal Enabled!" | tee /dev/kmsg
+
+# Set default hotplug here:
+	echo 0 > /sys/module/autosmp/parameters/enabled
+	echo 0 > /sys/module/dyn_hotplug/parameters/enabled
+	echo 0 > /sys/module/msm_hotplug/enabled
+	echo 1 > /sys/kernel/intelli_plug/intelli_plug_active
+	echo "[defcon] hotplug options set!" | tee /dev/kmsg
+
+# CPU Boost Driver settings:
+	echo "40" > /sys/module/cpu_boost/parameters/input_boost_ms
+	echo "918000" > /sys/module/cpu_boost/parameters/input_boost_freq
+	echo "[defcon] input boost enabled!" | tee /dev/kmsg
+	echo 0 > /sys/module/cpu_boost/parameters/hotplug_boost
+
+
+# Neobuddy Intelliplug options
+# profile selections for full_mode_profile
+# 0 balanced 4 cores (default)
+# 1 performance 4 cores
+# 2 conservative 4 cores saves battery
+# 3 disable
+# 4 Tri
+# 5 Eco
+# 6 Strict
+# runthreshold default is 722
+# hystersis choice 0 thru 16 default is 8
+# max_cpus_online <---
+# cpus_boosted = max cpus boosted
+# max_cpus_online_susp = max cpu's while suspended
+	echo "1" > /sys/kernel/intelli_plug/intelli_plug_active
+	echo "0" > /sys/kernel/intelli_plug/parameters/full_mode_profile
+	echo "4" > /sys/kernel/intelli_plug/max_cpus_online
+	echo "1" > /sys/kernel/intelli_plug/min_cpus_online
+	echo "3" > /sys/kernel/intelli_plug/cpus_boosted
+	echo "1" > /sys/kernel/intelli_plug/max_cpus_online_susp
+	echo "722" > /sys/kernel/intelli_plug/parameters/cpu_nr_run_threshold
+	echo "8" > /sys/kernel/intelli_plug/parameters/nr_run_hysteresis
+	echo "[defcon] Intelliplug fully optimized!" | tee /dev/kmsg
+
+# Stratosk dyn_hotplug Settings
+	echo "4" > /sys/module/dyn_hotplug/parameters/max_online
+	echo "10" > /sys/module/dyn_hotplug/parameters/down_timer_cnt
+	echo "2" > /sys/module/dyn_hotplug/parameters/up_timer_cnt
+	echo "25" > /sys/module/dyn_hotplug/parameters/up_threshold
+	echo "1" > /sys/module/dyn_hotplug/parameters/min_online
+	echo "[defcon] Dyn_hotplug fully optimized!" | tee /dev/kmsg
+
+# Tweak AutoSMP Hotplug
+	echo "67" > /sys/kernel/autosmp/conf/cpufreq_down
+	echo "80" > /sys/kernel/autosmp/conf/cpufreq_up
+	echo 3 > /sys/kernel/autosmp/conf/cycle_down
+	echo 1 > /sys/kernel/autosmp/conf/cycle_up
+	echo 4 > /sys/kernel/autosmp/conf/max_cpus
+	echo 1 > /sys/kernel/autosmp/conf/min_cpus
+	echo "100" > /sys/kernel/autosmp/conf/delay
+	echo 1 > /sys/kernel/autosmp/conf/scroff_single_core
+	echo "[defcon] autosmp fully optimized!" | tee /dev/kmsg
+
+# Set TCP westwood
+	echo "westwood" > /proc/sys/net/ipv4/tcp_congestion_control
+	echo "[defcon] TCP set: westwood" | tee /dev/kmsg
+
+# Set HYPER as default CPU governor:	
+	echo "HYPER" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+	echo "HYPER" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+	echo "HYPER" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+	echo "HYPER" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+	echo "384000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+	echo "384000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+	echo "384000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
+	echo "384000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
+	#echo "1" > /sys/devices/system/cpu/cpufreq/HYPER/io_is_busy
+	#echo "85" > /sys/devices/system/cpu/cpufreq/HYPER/up_threshold
+	#echo "85" > /sys/devices/system/cpu/cpufreq/HYPER/micro_freq_up_threshold
+	#echo "[defcon] HYPER CPU Governor activated" | tee /dev/kmsg
+
+# Ultra Samepage Merging settings low, medium, full, or quiet can be set.
+	echo "medium" > /sys/kernel/mm/uksm/cpu_governor
+
+
+# Set Power Save Settings
+	echo 1 > /sys/module/pm_8x60/modes/cpu0/wfi/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu2/power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu3/power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/suspend_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu0/retention/idle_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu1/retention/idle_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu2/retention/idle_enabled
+	echo 1 > /sys/module/pm_8x60/modes/cpu3/retention/idle_enabled
+	echo 1 > /sys/module/rpm_resources/enable_low_power/L2_cache
+	echo 1 > /sys/module/rpm_resources/enable_low_power/pxo
+	echo 1 > /sys/module/rpm_resources/enable_low_power/vdd_dig
+	echo 1 > /sys/module/rpm_resources/enable_low_power/vdd_mem
+	echo 1 > /dev/cpuctl/apps/cpu.notify_on_migrate
+	echo "[defcon] Power saving modes Enabled" | tee /dev/kmsg
+
+# Set IOSched
+	echo "fiops" > /sys/block/mmcblk0/queue/scheduler
+	echo "2048" > /sys/block/mmcblk0/queue/read_ahead_kb
+	echo "[defcon] IOSched set: fiops" | tee /dev/kmsg
+	echo "[defcon] IOSched readahead set to: 2048" | tee /dev/kmsg
+	
+# Sweep2Dim default
+	echo "0" > /sys/android_touch/sweep2wake
+	echo "1" > /sys/android_touch/sweep2dim
+	echo "73" > /sys/module/sweep2wake/parameters/down_kcal
+	echo "73" > /sys/module/sweep2wake/parameters/up_kcal
+	echo "[defcon] sweep2dim enabled!" | tee /dev/kmsg
+
+# Set RGB KCAL
+if [ -e /sys/devices/platform/kcal_ctrl.0/kcal ]; then
+	sd_r=255
+	sd_g=255
+	sd_b=255
+	kcal="$sd_r $sd_g $sd_b"
+	echo "$kcal" > /sys/devices/platform/kcal_ctrl.0/kcal
+	echo "1" > /sys/devices/platform/kcal_ctrl.0/kcal_ctrl
+	echo "[defcon] LCD_KCAL: red=[$sd_r], green=[$sd_g], blue=[$sd_b]" | tee /dev/kmsg
+fi
+
+# disable sysctl.conf to prevent ROM interference with tunables
+	$bb mount -o rw,remount /system
+	$bb [ -e /system/etc/sysctl.conf ] && $bb mv -f /system/etc/sysctl.conf /system/etc/sysctl.conf.fkbak
+
+# disable the PowerHAL since there is a kernel-side touch boost implemented
+	$bb [ -e /system/lib/hw/power.msm8960.so.fkbak ] || $bb cp /system/lib/hw/power.msm8960.so /system/lib/hw/power.msm8960.so.fkbak
+	$bb [ -e /system/lib/hw/power.msm8960.so ] && $bb rm -f /system/lib/hw/power.msm8960.so
+
+# create and set permissions for /system/etc/init.d if it doesn't already exist
+	$bb mkdir /system/etc/init.d;
+	$bb chown -R root.root /system/etc/init.d;
+	$bb chmod -R 775 /system/etc/init.d;
+	$bb mount -o ro,remount /system;
+	echo "[defcon] init.d permissions set" | tee /dev/kmsg
+
+# Set permissions for Lowmemorykiller not having the right persmissions with some roms
+	$bb chown -R root.root /sys/module/lowmemorykiller/parameters;
+	$bb chmod -R 775 /sys/module/lowmemorykiller/parameters;
+	echo "[defcon] LMK permissions set" | tee /dev/kmsg
+
+# Interactive Options
+	echo 20000 1300000:40000 1400000:20000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+	echo 85 1300000:90 1400000:70 > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+
+# GPU Settings
+	echo "400000000" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk
+	echo "interactive" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/pwrscale/trustzone/governor
+	echo "[defcon] GPU Settings Set" | tee /dev/kmsg
+
+# disable debugging on some modules
+	echo "0" > /sys/module/kernel/parameters/initcall_debug;
+	echo "0" > /sys/module/alarm/parameters/debug_mask;
+	echo "0" > /sys/module/alarm_dev/parameters/debug_mask;
+	echo "0" > /sys/module/binder/parameters/debug_mask;
+	echo "0" > /sys/module/xt_qtaguid/parameters/debug_mask;
+	echo "[defcon] Misc Debugging disabled" | tee /dev/kmsg
+
+# VM Tweaks
+	echo "4096" > /proc/sys/vm/min_free_kbytes;
+	echo "0" > /proc/sys/vm/oom_kill_allocating_task;
+	echo "0" > /proc/sys/vm/panic_on_oom;
+	echo "0" > /proc/sys/vm/laptop_mode;
+	echo "60" > /proc/sys/vm/swappiness;
+	echo "40" > /proc/sys/vm/vfs_cache_pressure;
+	echo "90" > /proc/sys/vm/dirty_ratio;
+	echo "1" > /proc/sys/vm/overcommit_memory;
+	echo "4" > /proc/sys/vm/min_free_order_shift;
+	echo "1" > /proc/sys/vm/oom_dump_tasks;
+	echo "1000" > /proc/sys/vm/dirty_writeback_centisecs;
+	echo "500" > /proc/sys/vm/dirty_expire_centisecs;
+	echo "8" > /proc/sys/vm/page-cluster;
+	echo "3" > /proc/sys/vm/drop_caches
+	echo "0" > /sys/kernel/sched/arch_power
+	echo "0" > /sys/kernel/sched/gentle_fair_sleepers
+	echo "[defcon] VM Tweaks completed!" | tee /dev/kmsg
+
+# Filesystem Tweaks
+	echo "10" > /proc/sys/fs/lease-break-time;
+	echo "32000" > /proc/sys/fs/inotify/max_queued_events;
+	echo "524288" > /proc/sys/fs/file-max;
+	echo "256" > /proc/sys/fs/inotify/max_user_instances;
+	echo "10240" > /proc/sys/fs/inotify/max_user_watches;
+	echo "[defcon] Filesystem Tweaks completed!" | tee /dev/kmsg
+
+# Misc Kernel-Tweaks
+	echo "1000000" > /proc/sys/kernel/sched_min_granularity_ns;
+	echo "18000000" > /proc/sys/kernel/sched_latency_ns;
+	echo "3000000" > /proc/sys/kernel/sched_wakeup_granularity_ns;
+	echo "0" > /proc/sys/kernel/panic;
+	echo "1" > /proc/sys/kernel/panic_on_oops;
+	echo "64000" > /proc/sys/kernel/msgmni;
+	echo "64000" > /proc/sys/kernel/msgmax;
+	echo "4096" > /proc/sys/kernel/shmmni;
+	echo "2097152" > /proc/sys/kernel/shmall;
+	echo "536870912" > /proc/sys/kernel/shmmax;
+	echo "524288" > /proc/sys/kernel/threads-max;
+	echo "500 512000 64 2048" > /proc/sys/kernel/sem;
+	echo "0" > /proc/sys/kernel/sched_child_runs_first;
+	echo "[defcon] Misc Kernel Tweaks completed!" | tee /dev/kmsg
