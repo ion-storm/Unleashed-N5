@@ -37,9 +37,9 @@ function cleanme {
 	echo "Working directory cleaned..."
 }
 
-rm -rf out
-mkdir out
-mkdir out/tmp
+rm -rf out2
+mkdir out2
+mkdir out2/tmp
 echo "Checking for build..."
 if [ -f ozip/boot.img ]; then
 	read -p "Previous build found, clean working directory..(y/n)? : " cchoice
@@ -74,7 +74,7 @@ echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 fi
 echo "Extracting files..."
 if [ -f arch/arm/boot/"$kerneltype" ]; then
-	cp arch/arm/boot/"$kerneltype" out
+	cp arch/arm/boot/"$kerneltype" out2
 	#rm -rf ozip/system/lib/modules/*
 	rm -rf AnyKernel/system/lib/modules/*
 	#mkdir -p ozip/system/lib/modules
@@ -120,15 +120,15 @@ fi
 
 #echo "Making ramdisk..."
 #if [ -d $ramdisk ]; then
-	/media/Extra/porting/buildtools/mkbootfs $ramdisk | /media/Extra/porting/buildtools/lz4demo -c stdin out/ramdisk.lz4
+	/media/Extra/porting/buildtools/mkbootfs $ramdisk | /media/Extra/porting/buildtools/lz4demo -c stdin out2/ramdisk.lz4
 #else
 #	echo "No ramdisk found..."
 #	exit 0;
 #fi
 
 #echo "Making boot.img..."
-#if [ -f out/"$kerneltype" ]; then
-#	/media/Extra/porting/buildtools/mkbootimg --kernel out/"$kerneltype" --ramdisk out/ramdisk.lz4 --cmdline "$cmdline" --base $base --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --output ozip/boot.img
+#if [ -f out2/"$kerneltype" ]; then
+#	/media/Extra/porting/buildtools/mkbootimg --kernel out2/"$kerneltype" --ramdisk out2/ramdisk.lz4 --cmdline "$cmdline" --base $base --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --output ozip/boot.img
 #else
 #	echo "No $kerneltype found..."
 #	exit 0;
