@@ -1,0 +1,165 @@
+#!/bin/bash
+export ARCH=arm
+if [ "$1" == "local" ]; then
+	echo "Local Build"
+	build=/home/defcon/Desktop
+	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.09/bin/arm-cortex_a15-linux-gnueabihf-
+	export ENABLE_GRAPHITE=true
+else
+	echo "Remote Build"
+	build=/home/defcon/downloads/
+	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/aarm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.09/bin/arm-cortex_a15-linux-gnueabihf-
+	export ENABLE_GRAPHITE=true
+fi
+kernel="defcon"
+version="v1u-unleashed"
+rom="AOSP"
+variant="hh"
+ramdisk=ramdisk
+#ramdisk=/home/defcon/Desktop/newboot/ramdisk
+config="hammerhead_defconfig"
+kerneltype="zImage-dtb"
+ps=2048
+base=0x00000000
+ramdisk_offset=0x02900000
+tags_offset=0x00000100
+cmdline="console=ttyHSL0,115200,n8 androidboot.hardware=hammerhead user_debug=31 maxcpus=2 msm_watchdog_v2.enable=1"
+
+function cleanme {
+	if [ -f arch/arm/boot/"$kerneltype" ]; then
+		echo "  CLEAN   ozip"
+	fi
+	rm -rf ozip/boot.img
+        rm -rf ozip/system/lib/modules/*
+	rm -rf arch/arm/boot/"$kerneltype"
+	mkdir -p ozip/system/lib/modules
+	make clean && make mrproper
+	echo "Working directory cleaned..."
+}
+
+rm -rf out2
+mkdir out2
+mkdir out2/tmp
+echo "Checking for build..."
+if [ -f ozip/boot.img ]; then
+	read -p "Previous build found, clean working directory..(y/n)? : " cchoice
+	case "$cchoice" in
+		y|Y )
+			cleanme;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+	read -p "Begin build now..(y/n)? : " dchoice
+	case "$dchoice" in
+		y|Y)
+                        DATE_START=$(date +"%s")
+			make "$config"
+			make -j9
+
+echo "-------------------------"
+echo "Build Completed in:"
+echo "-------------------------"
+DATE_END=$(date +"%s")
+DIFF=$(($DATE_END - $DATE_START))
+echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
+
+			exit 0;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+fi
+echo "Extracting files..."
+if [ -f arch/arm/boot/"$kerneltype" ]; then
+	cp arch/arm/boot/"$kerneltype" out2
+	#rm -rf ozip/system/lib/modules/*
+	rm -rf AnyKernel/system/lib/modules/*
+	#mkdir -p ozip/system/lib/modules
+	mkdir -p AnyKernel/system/lib/modules
+	#find . -name "*.ko" -exec cp -f {} ozip/system/lib/modules \;
+	find . -name "*.ko" -exec cp -f {} AnyKernel/system/lib/modules \;
+	if [ -e ozip/system/lib/modules/*.ko ]; then
+		echo "Modules found."
+	else
+		echo "No modules"
+		ozip/system/lib/modules/*
+	fi
+else
+	echo "Nothing has been made..."
+	read -p "Clean working directory..(y/n)? : " achoice
+	case "$achoice" in
+		y|Y )
+			cleanme;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+	read -p "Begin build now..(y/n)? : " bchoice
+	case "$bchoice" in
+		y|Y)
+                        DATE_START=$(date +"%s")
+			make "$config"
+			make -j9
+echo "-------------------------"
+echo "Build Completed in:"
+echo "-------------------------"
+DATE_END=$(date +"%s")
+DIFF=$(($DATE_END - $DATE_START))
+echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
+			exit 0;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+fi
+
+#echo "Making ramdisk..."
+#if [ -d $ramdisk ]; then
+	/media/Extra/porting/buildtools/mkbootfs $ramdisk | /media/Extra/porting/buildtools/lz4demo -c stdin out2/ramdisk.lz4
+#else
+#	echo "No ramdisk found..."
+#	exit 0;
+#fi
+
+#echo "Making boot.img..."
+#if [ -f out2/"$kerneltype" ]; then
+#	/media/Extra/porting/buildtools/mkbootimg --kernel out2/"$kerneltype" --ramdisk out2/ramdisk.lz4 --cmdline "$cmdline" --base $base --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --output ozip/boot.img
+#else
+#	echo "No $kerneltype found..."
+#	exit 0;
+#fi
+
+echo "Zipping AnyKernel..."
+if [ -f arch/arm/boot/"$kerneltype" ]; then
+	#cd ozip
+	#zip -r9 ../"$kernel"-$version-"$rom"_"$variant".zip .
+	#mv ../"$kernel"-$version-"$rom"_"$variant".zip $build
+	#cd ..
+	#echo "cleaning up..."
+	#rm -rf ozip/system/lib/modules/*
+	#echo "Almost Done..."
+	cd AnyKernel
+	echo "Zipping up AnyKernel zip..."
+	rm ./kernel/"$kerneltype"
+	cp ../arch/arm/boot/"$kerneltype" ./kernel/
+	zip -r9 "$kernel"-$version-"$rom"_"$variant".zip *
+	mv "$kernel"-$version-"$rom"_"$variant".zip $build
+	#echo "Output zip: $build/$kernel-$version-$(echo $rom)_$variant.zip"
+	echo "AnyKernel Output zip: $build/$kernel-$version-"$rom"_$variant.zip"
+	echo "cleaning up..."
+	cd ..
+	rm "$kernel"-$version-"$rom"_"$variant".zip
+	rm -rf AnyKernel/system/lib/modules/*
+	rm ./kernel/"$kerneltype"
+	rm arch/arm/boot/"$kerneltype"
+	echo "Done..."
+	exit 0;
+else
+	echo "No $kerneltype found..."
+	exit 0;
+fi
