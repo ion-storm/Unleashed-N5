@@ -420,7 +420,7 @@ static void sdio_xprt_read_data(struct work_struct *work)
 			spin_unlock_irqrestore(
 				&sdio_remote_xprt.channel->read_list_lock,
 				flags);
-			queue_delayed_work(sdio_xprt_read_workqueue,
+			mod_delayed_work(sdio_xprt_read_workqueue,
 					   &work_read_data,
 					   msecs_to_jiffies(100));
 			break;
@@ -432,7 +432,7 @@ static void sdio_xprt_read_data(struct work_struct *work)
 		if (!buf) {
 			SDIO_XPRT_DBG("%s: Failed to alloc_from_free_list"
 				      " Try again later\n", __func__);
-			queue_delayed_work(sdio_xprt_read_workqueue,
+			mod_delayed_work(sdio_xprt_read_workqueue,
 					   &work_read_data,
 					   msecs_to_jiffies(100));
 			break;
@@ -445,7 +445,7 @@ static void sdio_xprt_read_data(struct work_struct *work)
 					" read %d bytes, expected %d\n",
 					size, read_avail);
 			return_to_free_list(sdio_remote_xprt.channel, buf);
-			queue_delayed_work(sdio_xprt_read_workqueue,
+			mod_delayed_work(sdio_xprt_read_workqueue,
 					   &work_read_data,
 					   msecs_to_jiffies(100));
 			break;
@@ -477,7 +477,7 @@ static void rpcrouter_sdio_remote_notify(void *_dev, unsigned event)
 	if (event == SDIO_EVENT_DATA_READ_AVAIL) {
 		SDIO_XPRT_DBG("%s Received Notify"
 			      "SDIO_EVENT_DATA_READ_AVAIL\n", __func__);
-		queue_delayed_work(sdio_xprt_read_workqueue,
+		mod_delayed_work(sdio_xprt_read_workqueue,
 				   &work_read_data, 0);
 	}
 	if (event == SDIO_EVENT_DATA_WRITE_AVAIL) {

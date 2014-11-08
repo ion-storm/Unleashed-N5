@@ -63,7 +63,7 @@ void rtl8192_hw_wakeup(struct net_device *dev)
 		spin_unlock_irqrestore(&priv->rf_ps_lock, flags);
 		RT_TRACE(COMP_DBG, "rtl8192_hw_wakeup(): RF Change in "
 			 "progress!\n");
-		queue_delayed_work_rsl(priv->rtllib->wq,
+		mod_delayed_work_rsl(priv->rtllib->wq,
 				       &priv->rtllib->hw_wakeup_wq, MSECS(10));
 		return;
 	}
@@ -108,9 +108,9 @@ void rtl8192_hw_to_sleep(struct net_device *dev, u64 time)
 		return;
 	}
 	tmp = time - jiffies;
-	queue_delayed_work_rsl(priv->rtllib->wq,
+	mod_delayed_work_rsl(priv->rtllib->wq,
 			&priv->rtllib->hw_wakeup_wq, tmp);
-	queue_delayed_work_rsl(priv->rtllib->wq,
+	mod_delayed_work_rsl(priv->rtllib->wq,
 			(void *)&priv->rtllib->hw_sleep_wq, 0);
 	spin_unlock_irqrestore(&priv->ps_lock, flags);
 }

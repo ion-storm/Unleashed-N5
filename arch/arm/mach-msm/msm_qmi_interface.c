@@ -95,7 +95,7 @@ static void qmi_event_notify(unsigned event, void *priv)
 		break;
 
 	case MSM_IPC_ROUTER_RESUME_TX:
-		queue_delayed_work(msm_qmi_pending_workqueue,
+		mod_delayed_work(msm_qmi_pending_workqueue,
 				   &handle->resume_tx_work,
 				   msecs_to_jiffies(0));
 		break;

@@ -983,12 +983,12 @@ static void dwc3_restart_usb_work(struct work_struct *w)
 
 	/* Reset active USB connection */
 	mdwc->ext_xceiv.bsv = false;
-	queue_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
+	mod_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
 	/* Make sure disconnect is processed before sending connect */
 	flush_delayed_work(&mdwc->resume_work);
 
 	mdwc->ext_xceiv.bsv = true;
-	queue_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
+	mod_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
 }
 
 /**
@@ -2001,7 +2001,7 @@ static irqreturn_t msm_dwc3_irq(int irq, void *data)
 
 	if (atomic_read(&mdwc->in_lpm)) {
 		dev_dbg(mdwc->dev, "%s received in LPM\n", __func__);
-		queue_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
+		mod_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
 	} else {
 		/* With current implementation should never end up here */
 		pr_info_ratelimited("%s: IRQ outside LPM\n", __func__);
@@ -2056,7 +2056,7 @@ static int dwc3_msm_power_set_property_usb(struct power_supply *psy,
 		if (mdwc->otg_xceiv && !mdwc->ext_inuse &&
 		    (mdwc->ext_xceiv.otg_capability || !init)) {
 			mdwc->ext_xceiv.bsv = val->intval;
-			queue_delayed_work(system_nrt_wq,
+			mod_delayed_work(system_nrt_wq,
 							&mdwc->resume_work, 20);
 
 			if (!init)
@@ -2164,7 +2164,7 @@ static void dwc3_ext_notify_online(void *ctx, int on)
 		power_supply_set_present(mdwc->ext_vbus_psy, on);
 
 	if (notify_otg)
-		queue_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
+		mod_delayed_work(system_nrt_wq, &mdwc->resume_work, 0);
 }
 
 static void dwc3_id_work(struct work_struct *w)
@@ -2250,7 +2250,7 @@ static void dwc3_init_adc_work(struct work_struct *w)
 
 	ret = qpnp_adc_tm_is_ready();
 	if (ret == -EPROBE_DEFER) {
-		queue_delayed_work(system_nrt_wq, to_delayed_work(w),
+		mod_delayed_work(system_nrt_wq, to_delayed_work(w),
 					msecs_to_jiffies(100));
 		return;
 	}

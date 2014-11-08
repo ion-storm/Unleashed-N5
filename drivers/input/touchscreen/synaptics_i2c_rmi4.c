@@ -2274,7 +2274,7 @@ static int __devinit synaptics_rmi4_probe(struct i2c_client *client,
 			create_singlethread_workqueue("rmi_det_workqueue");
 	INIT_DELAYED_WORK(&rmi4_data->det_work,
 			synaptics_rmi4_detection_work);
-	queue_delayed_work(rmi4_data->det_workqueue,
+	mod_delayed_work(rmi4_data->det_workqueue,
 			&rmi4_data->det_work,
 			msecs_to_jiffies(EXP_FN_DET_INTERVAL));
 

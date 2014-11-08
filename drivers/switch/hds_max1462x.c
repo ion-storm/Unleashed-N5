@@ -361,7 +361,7 @@ static void max1462x_remove_headset(struct max1462x_hsd_info *hi)
 	}
 
 	if (atomic_read(&hi->btn_state)) {
-		queue_delayed_work(local_max1462x_workqueue,
+		mod_delayed_work(local_max1462x_workqueue,
 			&(hi->work_for_key_released), hi->latency_for_key);
 	}
 }
@@ -414,10 +414,10 @@ static irqreturn_t max1462x_button_irq_handler(int irq, void *dev_id)
 	pr_debug("gpio_get_value(hi->gpio_key) : %d\n", value);
 
 	if (value)
-		queue_delayed_work(local_max1462x_workqueue,
+		mod_delayed_work(local_max1462x_workqueue,
 			&(hi->work_for_key_released), hi->latency_for_key);
 	else
-		queue_delayed_work(local_max1462x_workqueue,
+		mod_delayed_work(local_max1462x_workqueue,
 			&(hi->work_for_key_pressed), hi->latency_for_key);
 
 	return IRQ_HANDLED;

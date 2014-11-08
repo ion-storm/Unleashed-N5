@@ -530,7 +530,7 @@ err_out_retry:
 	ts->ic_init_err_cnt++;
 	disable_irq_nosync(ts->client->irq);
 	safety_reset(ts);
-	queue_delayed_work(synaptics_wq, &ts->work_init, msecs_to_jiffies(10));
+	mod_delayed_work(synaptics_wq, &ts->work_init, msecs_to_jiffies(10));
 
 	return 0;
 
@@ -1665,7 +1665,7 @@ static int lcd_notifier_callback(struct notifier_block *this,
 	case LCD_EVENT_ON_END:
 		if (!ts->curr_resume_state) {
 			ts->curr_resume_state = 1;
-			queue_delayed_work(synaptics_wq,
+			mod_delayed_work(synaptics_wq,
 				&ts->work_init,
 				msecs_to_jiffies(70));
 		}

@@ -152,7 +152,7 @@ static void test_clnt_notify(struct qmi_handle *handle,
 {
 	switch (event) {
 	case QMI_RECV_MSG:
-		queue_delayed_work(test_clnt_workqueue,
+		mod_delayed_work(test_clnt_workqueue,
 				   &work_recv_msg, 0);
 		break;
 	default:
@@ -204,11 +204,11 @@ static int test_clnt_svc_event_notify(struct notifier_block *this,
 	D("%s: event %ld\n", __func__, code);
 	switch (code) {
 	case QMI_SERVER_ARRIVE:
-		queue_delayed_work(test_clnt_workqueue,
+		mod_delayed_work(test_clnt_workqueue,
 				   &work_svc_arrive, 0);
 		break;
 	case QMI_SERVER_EXIT:
-		queue_delayed_work(test_clnt_workqueue,
+		mod_delayed_work(test_clnt_workqueue,
 				   &work_svc_exit, 0);
 		break;
 	default:

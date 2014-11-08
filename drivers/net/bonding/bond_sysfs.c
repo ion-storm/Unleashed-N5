@@ -562,7 +562,7 @@ static ssize_t bonding_store_arp_interval(struct device *d,
 				INIT_DELAYED_WORK(&bond->arp_work,
 						  bond_loadbalance_arp_mon);
 
-			queue_delayed_work(bond->wq, &bond->arp_work, 0);
+			mod_delayed_work(bond->wq, &bond->arp_work, 0);
 		}
 	}
 
@@ -1008,7 +1008,7 @@ static ssize_t bonding_store_miimon(struct device *d,
 			if (!delayed_work_pending(&bond->mii_work)) {
 				INIT_DELAYED_WORK(&bond->mii_work,
 						  bond_mii_monitor);
-				queue_delayed_work(bond->wq,
+				mod_delayed_work(bond->wq,
 						   &bond->mii_work, 0);
 			}
 		}

@@ -349,7 +349,7 @@ void ieee80211_scan_completed(struct ieee80211_hw *hw, bool aborted)
 	set_bit(SCAN_COMPLETED, &local->scanning);
 	if (aborted)
 		set_bit(SCAN_ABORTED, &local->scanning);
-	ieee80211_queue_delayed_work(&local->hw, &local->scan_work, 0);
+	ieee80211_mod_delayed_work(&local->hw, &local->scan_work, 0);
 }
 EXPORT_SYMBOL(ieee80211_scan_completed);
 
@@ -381,7 +381,7 @@ static int ieee80211_start_sw_scan(struct ieee80211_local *local)
 	/* We need to set power level at maximum rate for scanning. */
 	ieee80211_hw_config(local, 0);
 
-	ieee80211_queue_delayed_work(&local->hw,
+	ieee80211_mod_delayed_work(&local->hw,
 				     &local->scan_work, 0);
 
 	return 0;
@@ -739,7 +739,7 @@ void ieee80211_scan_work(struct work_struct *work)
 		}
 	} while (next_delay == 0);
 
-	ieee80211_queue_delayed_work(&local->hw, &local->scan_work, next_delay);
+	ieee80211_mod_delayed_work(&local->hw, &local->scan_work, next_delay);
 	goto out;
 
 out_complete:

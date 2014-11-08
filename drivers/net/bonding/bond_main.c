@@ -796,7 +796,7 @@ static void bond_resend_igmp_join_requests(struct bonding *bond)
 	}
 
 	if (--bond->igmp_retrans > 0)
-		queue_delayed_work(bond->wq, &bond->mcast_work, HZ/5);
+		mod_delayed_work(bond->wq, &bond->mcast_work, HZ/5);
 
 	read_unlock(&bond->lock);
 }
@@ -1137,7 +1137,7 @@ void bond_change_active_slave(struct bonding *bond, struct slave *new_active)
 	    ((USES_PRIMARY(bond->params.mode) && new_active) ||
 	     bond->params.mode == BOND_MODE_ROUNDROBIN)) {
 		bond->igmp_retrans = bond->params.resend_igmp;
-		queue_delayed_work(bond->wq, &bond->mcast_work, 0);
+		mod_delayed_work(bond->wq, &bond->mcast_work, 0);
 	}
 }
 
@@ -2567,7 +2567,7 @@ void bond_mii_monitor(struct work_struct *work)
 
 re_arm:
 	if (bond->params.miimon)
-		queue_delayed_work(bond->wq, &bond->mii_work, delay);
+		mod_delayed_work(bond->wq, &bond->mii_work, delay);
 
 	read_unlock(&bond->lock);
 
@@ -2901,7 +2901,7 @@ void bond_loadbalance_arp_mon(struct work_struct *work)
 
 re_arm:
 	if (bond->params.arp_interval)
-		queue_delayed_work(bond->wq, &bond->arp_work, delta_in_ticks);
+		mod_delayed_work(bond->wq, &bond->arp_work, delta_in_ticks);
 
 	read_unlock(&bond->lock);
 }
@@ -3178,7 +3178,7 @@ void bond_activebackup_arp_mon(struct work_struct *work)
 
 re_arm:
 	if (bond->params.arp_interval)
-		queue_delayed_work(bond->wq, &bond->arp_work, delta_in_ticks);
+		mod_delayed_work(bond->wq, &bond->arp_work, delta_in_ticks);
 
 	read_unlock(&bond->lock);
 
@@ -3420,12 +3420,12 @@ static int bond_open(struct net_device *bond_dev)
 		}
 
 		INIT_DELAYED_WORK(&bond->alb_work, bond_alb_monitor);
-		queue_delayed_work(bond->wq, &bond->alb_work, 0);
+		mod_delayed_work(bond->wq, &bond->alb_work, 0);
 	}
 
 	if (bond->params.miimon) {  /* link check interval, in milliseconds. */
 		INIT_DELAYED_WORK(&bond->mii_work, bond_mii_monitor);
-		queue_delayed_work(bond->wq, &bond->mii_work, 0);
+		mod_delayed_work(bond->wq, &bond->mii_work, 0);
 	}
 
 	if (bond->params.arp_interval) {  /* arp interval, in milliseconds. */
@@ -3436,14 +3436,14 @@ static int bond_open(struct net_device *bond_dev)
 			INIT_DELAYED_WORK(&bond->arp_work,
 					  bond_loadbalance_arp_mon);
 
-		queue_delayed_work(bond->wq, &bond->arp_work, 0);
+		mod_delayed_work(bond->wq, &bond->arp_work, 0);
 		if (bond->params.arp_validate)
 			bond->recv_probe = bond_arp_rcv;
 	}
 
 	if (bond->params.mode == BOND_MODE_8023AD) {
 		INIT_DELAYED_WORK(&bond->ad_work, bond_3ad_state_machine_handler);
-		queue_delayed_work(bond->wq, &bond->ad_work, 0);
+		mod_delayed_work(bond->wq, &bond->ad_work, 0);
 		/* register to receive LACPDUs */
 		bond->recv_probe = bond_3ad_lacpdu_recv;
 		bond_3ad_initiate_agg_selection(bond, 1);

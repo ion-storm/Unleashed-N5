@@ -380,7 +380,7 @@ bkops_check_threshold_show(struct device *dev,
 		ret = -EINVAL;
 	else
 	    ret = snprintf(buf, PAGE_SIZE, "%d\n",
-		card->bkops_info.size_percentage_to_queue_delayed_work);
+		card->bkops_info.size_percentage_to_mod_delayed_work);
 
 	mmc_blk_put(md);
 	return ret;
@@ -417,14 +417,14 @@ bkops_check_threshold_store(struct device *dev,
 		ret = -EINVAL;
 		goto exit;
 	}
-	card->bkops_info.size_percentage_to_queue_delayed_work = value;
-	card->bkops_info.min_sectors_to_queue_delayed_work =
+	card->bkops_info.size_percentage_to_mod_delayed_work = value;
+	card->bkops_info.min_sectors_to_mod_delayed_work =
 		(card_size * value) / 100;
 
 	pr_debug("%s: size_percentage = %d, min_sectors = %d",
 			mmc_hostname(card->host),
-			card->bkops_info.size_percentage_to_queue_delayed_work,
-			card->bkops_info.min_sectors_to_queue_delayed_work);
+			card->bkops_info.size_percentage_to_mod_delayed_work,
+			card->bkops_info.min_sectors_to_mod_delayed_work);
 
 exit:
 	mmc_blk_put(md);
@@ -2867,8 +2867,8 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 	blk_queue_logical_block_size(md->queue.queue, 512);
 	set_capacity(md->disk, size);
 
-	card->bkops_info.size_percentage_to_queue_delayed_work = percentage;
-	card->bkops_info.min_sectors_to_queue_delayed_work =
+	card->bkops_info.size_percentage_to_mod_delayed_work = percentage;
+	card->bkops_info.min_sectors_to_mod_delayed_work =
 		((unsigned int)size * percentage) / 100;
 
 	if (mmc_host_cmd23(card->host)) {

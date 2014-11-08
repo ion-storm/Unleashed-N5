@@ -534,7 +534,7 @@ static void sdio_mux_write_data(struct work_struct *work)
 			notify = 1;
 		} else {
 			__skb_queue_head(&sdio_mux_write_pool, skb);
-			queue_delayed_work(sdio_mux_workqueue,
+			mod_delayed_work(sdio_mux_workqueue,
 					&delayed_work_sdio_mux_write,
 					msecs_to_jiffies(250)
 					);

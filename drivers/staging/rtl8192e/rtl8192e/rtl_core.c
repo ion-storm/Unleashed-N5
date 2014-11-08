@@ -428,7 +428,7 @@ bool MgntActSet_RF_State(struct net_device *dev,
 		if (StateToSet == eRfOn) {
 
 			if (bConnectBySSID && (priv->blinked_ingpio == true)) {
-				queue_delayed_work_rsl(ieee->wq,
+				mod_delayed_work_rsl(ieee->wq,
 					 &ieee->associate_procedure_wq, 0);
 				priv->blinked_ingpio = false;
 			}
@@ -662,7 +662,7 @@ static int rtl8192_handle_beacon(struct net_device *dev,
 
 	rtl8192_qos_handle_probe_response(priv, 1, network);
 
-	queue_delayed_work_rsl(priv->priv_wq, &priv->update_beacon_wq, 0);
+	mod_delayed_work_rsl(priv->priv_wq, &priv->update_beacon_wq, 0);
 	return 0;
 
 }
@@ -1751,7 +1751,7 @@ void	rtl819x_watchdog_wqcallback(void *data)
 
 			if (!(ieee->rtllib_ap_sec_type(ieee) &
 			     (SEC_ALG_CCMP|SEC_ALG_TKIP)))
-				queue_delayed_work_rsl(ieee->wq,
+				mod_delayed_work_rsl(ieee->wq,
 					&ieee->associate_procedure_wq, 0);
 
 			priv->check_roaming_cnt = 0;
@@ -1787,7 +1787,7 @@ void	rtl819x_watchdog_wqcallback(void *data)
 void watch_dog_timer_callback(unsigned long data)
 {
 	struct r8192_priv *priv = rtllib_priv((struct net_device *)data);
-	queue_delayed_work_rsl(priv->priv_wq, &priv->watch_dog_wq, 0);
+	mod_delayed_work_rsl(priv->priv_wq, &priv->watch_dog_wq, 0);
 	mod_timer(&priv->watch_dog_timer, jiffies +
 		  MSECS(RTLLIB_WATCH_DOG_TIME));
 }
@@ -3110,7 +3110,7 @@ void check_rfctrl_gpio_timer(unsigned long data)
 
 	priv->polling_timer_on = 1;
 
-	queue_delayed_work_rsl(priv->priv_wq, &priv->gpio_change_rf_wq, 0);
+	mod_delayed_work_rsl(priv->priv_wq, &priv->gpio_change_rf_wq, 0);
 
 	mod_timer(&priv->gpio_polling_timer, jiffies +
 		  MSECS(RTLLIB_WATCH_DOG_TIME));

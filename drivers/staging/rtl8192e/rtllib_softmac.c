@@ -633,7 +633,7 @@ static void rtllib_softmac_scan_wq(void *data)
 	if (ieee->active_channel_map[ieee->current_network.channel] == 1)
 		rtllib_send_probe_requests(ieee, 0);
 
-	queue_delayed_work_rsl(ieee->wq, &ieee->softmac_scan_wq,
+	mod_delayed_work_rsl(ieee->wq, &ieee->softmac_scan_wq,
 			       MSECS(RTLLIB_SOFTMAC_SCAN_TIME));
 
 	up(&ieee->scan_sem);
@@ -762,7 +762,7 @@ static void rtllib_start_scan(struct rtllib_device *ieee)
 		if (ieee->scanning_continue == 0) {
 			ieee->actscanning = true;
 			ieee->scanning_continue = 1;
-			queue_delayed_work_rsl(ieee->wq,
+			mod_delayed_work_rsl(ieee->wq,
 					       &ieee->softmac_scan_wq, 0);
 		}
 	} else {
@@ -1439,7 +1439,7 @@ void rtllib_associate_abort(struct rtllib_device *ieee)
 
 	ieee->state = RTLLIB_ASSOCIATING_RETRY;
 
-	queue_delayed_work_rsl(ieee->wq, &ieee->associate_retry_wq,
+	mod_delayed_work_rsl(ieee->wq, &ieee->associate_retry_wq,
 			   RTLLIB_SOFTMAC_ASSOC_RETRY_TIME);
 
 	spin_unlock_irqrestore(&ieee->lock, flags);
@@ -1741,7 +1741,7 @@ inline void rtllib_softmac_new_net(struct rtllib_device *ieee,
 				if (ieee->LedControlHandler != NULL)
 					ieee->LedControlHandler(ieee->dev,
 							 LED_CTL_START_TO_LINK);
-				queue_delayed_work_rsl(ieee->wq,
+				mod_delayed_work_rsl(ieee->wq,
 					   &ieee->associate_procedure_wq, 0);
 			} else {
 				if (rtllib_is_54g(&ieee->current_network) &&
@@ -2285,7 +2285,7 @@ inline int rtllib_rx_assoc_resp(struct rtllib_device *ieee, struct sk_buff *skb,
 				"Association response status code 0x%x\n",
 				errcode);
 			if (ieee->AsocRetryCount < RT_ASOC_RETRY_LIMIT)
-				queue_delayed_work_rsl(ieee->wq,
+				mod_delayed_work_rsl(ieee->wq,
 					 &ieee->associate_procedure_wq, 0);
 			else
 				rtllib_associate_abort(ieee);
@@ -2397,7 +2397,7 @@ inline int rtllib_rx_deauth(struct rtllib_device *ieee, struct sk_buff *skb)
 
 		if (!(ieee->rtllib_ap_sec_type(ieee) &
 		    (SEC_ALG_CCMP|SEC_ALG_TKIP)))
-			queue_delayed_work_rsl(ieee->wq,
+			mod_delayed_work_rsl(ieee->wq,
 				       &ieee->associate_procedure_wq, 5);
 	}
 	return 0;
@@ -2799,7 +2799,7 @@ static void rtllib_start_ibss_wq(void *data)
 
 inline void rtllib_start_ibss(struct rtllib_device *ieee)
 {
-	queue_delayed_work_rsl(ieee->wq, &ieee->start_ibss_wq, MSECS(150));
+	mod_delayed_work_rsl(ieee->wq, &ieee->start_ibss_wq, MSECS(150));
 }
 
 /* this is called only in user context, with wx_sem held */
@@ -2852,7 +2852,7 @@ void rtllib_disassociate(struct rtllib_device *ieee)
 	ieee->is_set_key = false;
 	ieee->wap_set = 0;
 
-	queue_delayed_work_rsl(ieee->wq, &ieee->link_change_wq, 0);
+	mod_delayed_work_rsl(ieee->wq, &ieee->link_change_wq, 0);
 
 	notify_wx_assoc_event(ieee);
 }

@@ -1770,7 +1770,7 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 
 			if (mdp_all_blocks_off) {
 				/* send workqueue to turn off mdp power */
-				queue_delayed_work(mdp_pipe_ctrl_wq,
+				mod_delayed_work(mdp_pipe_ctrl_wq,
 						   &mdp_pipe_ctrl_worker,
 						   mdp_timer_duration);
 			}
@@ -1795,9 +1795,9 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 			 * try to cancel the current work if it fails to
 			 * stop (which means del_timer can't delete it
 			 * from the list, it's about to expire and run),
-			 * we have to let it run. queue_delayed_work won't
+			 * we have to let it run. mod_delayed_work won't
 			 * accept the next job which is same as
-			 * queue_delayed_work(mdp_timer_duration = 0)
+			 * mod_delayed_work(mdp_timer_duration = 0)
 			 */
 			cancel_delayed_work(&mdp_pipe_ctrl_worker);
 		}
@@ -1834,7 +1834,7 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 					clk_disable_unprepare(mdp_lut_clk);
 			} else {
 				/* send workqueue to turn off mdp power */
-				queue_delayed_work(mdp_pipe_ctrl_wq,
+				mod_delayed_work(mdp_pipe_ctrl_wq,
 						   &mdp_pipe_ctrl_worker,
 						   mdp_timer_duration);
 			}

@@ -982,7 +982,7 @@ int hdmi_hdcp_authenticate(void *input)
 	mutex_lock(hdcp_ctrl->init_data.mutex);
 	hdcp_ctrl->hdcp_state = HDCP_STATE_AUTHENTICATING;
 	mutex_unlock(hdcp_ctrl->init_data.mutex);
-	queue_delayed_work(hdcp_ctrl->init_data.workq,
+	mod_delayed_work(hdcp_ctrl->init_data.workq,
 		&hdcp_ctrl->hdcp_auth_work, 0);
 
 	return 0;
@@ -1038,7 +1038,7 @@ int hdmi_hdcp_reauthenticate(void *input)
 	mutex_lock(hdcp_ctrl->init_data.mutex);
 	hdcp_ctrl->hdcp_state = HDCP_STATE_AUTHENTICATING;
 	mutex_unlock(hdcp_ctrl->init_data.mutex);
-	queue_delayed_work(hdcp_ctrl->init_data.workq,
+	mod_delayed_work(hdcp_ctrl->init_data.workq,
 		&hdcp_ctrl->hdcp_auth_work, HZ/2);
 
 	return 0;

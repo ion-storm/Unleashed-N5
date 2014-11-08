@@ -630,7 +630,7 @@ static irqreturn_t anx7808_cbl_det_isr(int irq, void *data)
 		wake_lock(&anx7808->slimport_lock);
 		pr_info("detect cable insertion\n");
 		anx7808_vote_usb_clk(anx7808);
-		queue_delayed_work(anx7808->workqueue, &anx7808->work, 0);
+		mod_delayed_work(anx7808->workqueue, &anx7808->work, 0);
 	} else {
 		pr_info("detect cable removal\n");
 		status = cancel_delayed_work_sync(&anx7808->work);
@@ -650,7 +650,7 @@ static void anx7808_work_func(struct work_struct *work)
 								work.work);
 
 	slimport_main_proc(td);
-	queue_delayed_work(td->workqueue, &td->work,
+	mod_delayed_work(td->workqueue, &td->work,
 			msecs_to_jiffies(300));
 #endif
 }

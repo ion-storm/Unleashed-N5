@@ -580,7 +580,7 @@ err_out_retry:
 	ts->ic_init_err_cnt++;
 	disable_irq_nosync(ts->client->irq);
 	safety_reset(ts);
-	queue_delayed_work(synaptics_wq, &ts->work_init, msecs_to_jiffies(10));
+	mod_delayed_work(synaptics_wq, &ts->work_init, msecs_to_jiffies(10));
 
 	return 0;
 
@@ -1601,7 +1601,7 @@ static int synaptics_ts_start(struct synaptics_ts_data *ts)
 
 	touch_power_cntl(ts, POWER_ON);
 
-	queue_delayed_work(synaptics_wq,
+	mod_delayed_work(synaptics_wq,
 			&ts->work_init, msecs_to_jiffies(BOOTING_DELAY));
 
 	return 0;

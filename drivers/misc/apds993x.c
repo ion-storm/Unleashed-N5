@@ -835,7 +835,7 @@ static void apds993x_reschedule_work(struct apds993x_data *data,
 	 * change the scheduled time that's why we have to cancel it first.
 	 */
 	__cancel_delayed_work(&data->dwork);
-	queue_delayed_work(apds993x_workqueue, &data->dwork, delay);
+	mod_delayed_work(apds993x_workqueue, &data->dwork, delay);
 }
 
 
@@ -958,7 +958,7 @@ static void apds993x_als_polling_work_handler(struct work_struct *work)
 	}
 
 	/* restart timer */
-	queue_delayed_work(apds993x_workqueue,
+	mod_delayed_work(apds993x_workqueue,
 			&data->als_dwork, msecs_to_jiffies(data->als_poll_delay));
 }
 #endif /* ALS_POLLING_ENABLED */
@@ -1095,7 +1095,7 @@ static int apds993x_enable_als_sensor(struct i2c_client *client, int val)
 			 */
 			__cancel_delayed_work(&data->als_dwork);
 			flush_delayed_work(&data->als_dwork);
-			queue_delayed_work(apds993x_workqueue, &data->als_dwork, msecs_to_jiffies(data->als_poll_delay));
+			mod_delayed_work(apds993x_workqueue, &data->als_dwork, msecs_to_jiffies(data->als_poll_delay));
 #endif
 		}
 	} else {
@@ -1171,7 +1171,7 @@ static int apds993x_set_als_poll_delay(struct i2c_client *client,
 	 */
 	__cancel_delayed_work(&data->als_dwork);
 	flush_delayed_work(&data->als_dwork);
-	queue_delayed_work(apds993x_workqueue,
+	mod_delayed_work(apds993x_workqueue,
 			&data->als_dwork,
 			msecs_to_jiffies(data->als_poll_delay));
 
@@ -1238,7 +1238,7 @@ static int apds993x_enable_ps_sensor(struct i2c_client *client, int val)
 			__cancel_delayed_work(&data->als_dwork);
 			flush_delayed_work(&data->als_dwork);
 			/* 100ms */
-			queue_delayed_work(apds993x_workqueue,
+			mod_delayed_work(apds993x_workqueue,
 					&data->als_dwork,
 					msecs_to_jiffies(data->als_poll_delay));
 

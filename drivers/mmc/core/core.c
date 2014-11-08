@@ -120,7 +120,7 @@ MODULE_PARM_DESC(
 static int mmc_schedule_delayed_work(struct delayed_work *work,
 				     unsigned long delay)
 {
-	return queue_delayed_work(workqueue, work, delay);
+	return mod_delayed_work(workqueue, work, delay);
 }
 
 /*
@@ -404,7 +404,7 @@ void mmc_start_delayed_bkops(struct mmc_card *card)
 		return;
 
 	if (card->bkops_info.sectors_changed <
-	    card->bkops_info.min_sectors_to_queue_delayed_work)
+	    card->bkops_info.min_sectors_to_mod_delayed_work)
 		return;
 
 	pr_debug("%s: %s: queueing delayed_bkops_work\n",

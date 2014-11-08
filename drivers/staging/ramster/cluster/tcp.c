@@ -477,12 +477,12 @@ static void r2net_sc_queue_work(struct r2net_sock_container *sc,
 	if (!queue_work(r2net_wq, work))
 		sc_put(sc);
 }
-static void r2net_sc_queue_delayed_work(struct r2net_sock_container *sc,
+static void r2net_sc_mod_delayed_work(struct r2net_sock_container *sc,
 					struct delayed_work *work,
 					int delay)
 {
 	sc_get(sc);
-	if (!queue_delayed_work(r2net_wq, work, delay))
+	if (!mod_delayed_work(r2net_wq, work, delay))
 		sc_put(sc);
 }
 static void r2net_sc_cancel_delayed_work(struct r2net_sock_container *sc,
@@ -536,7 +536,7 @@ static void r2net_set_nn_state(struct r2net_node *nn,
 		wake_up(&nn->nn_sc_wq);
 
 	if (!was_err && nn->nn_persistent_error) {
-		queue_delayed_work(r2net_wq, &nn->nn_still_up,
+		mod_delayed_work(r2net_wq, &nn->nn_still_up,
 				   msecs_to_jiffies(R2NET_QUORUM_DELAY_MS));
 	}
 
@@ -573,7 +573,7 @@ static void r2net_set_nn_state(struct r2net_node *nn,
 		if (delay > msecs_to_jiffies(r2net_reconnect_delay()))
 			delay = 0;
 		mlog(ML_CONN, "queueing conn attempt in %lu jiffies\n", delay);
-		queue_delayed_work(r2net_wq, &nn->nn_connect_work, delay);
+		mod_delayed_work(r2net_wq, &nn->nn_connect_work, delay);
 
 		/*
 		 * Delay the expired work after idle timeout.
@@ -585,7 +585,7 @@ static void r2net_set_nn_state(struct r2net_node *nn,
 		 * that it's already queued and do nothing.
 		 */
 		delay += msecs_to_jiffies(r2net_idle_timeout());
-		queue_delayed_work(r2net_wq, &nn->nn_connect_expired, delay);
+		mod_delayed_work(r2net_wq, &nn->nn_connect_expired, delay);
 	}
 
 	/* keep track of the nn's sc ref for the caller */
@@ -1688,7 +1688,7 @@ static void r2net_idle_timer(unsigned long data)
 static void r2net_sc_reset_idle_timer(struct r2net_sock_container *sc)
 {
 	r2net_sc_cancel_delayed_work(sc, &sc->sc_keepalive_work);
-	r2net_sc_queue_delayed_work(sc, &sc->sc_keepalive_work,
+	r2net_sc_mod_delayed_work(sc, &sc->sc_keepalive_work,
 		      msecs_to_jiffies(r2net_keepalive_delay()));
 	r2net_set_sock_timer(sc);
 	mod_timer(&sc->sc_idle_timeout,

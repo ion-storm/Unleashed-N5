@@ -966,9 +966,9 @@ static void ramster_remotify_process(struct work_struct *work);
 static DECLARE_DELAYED_WORK(ramster_remotify_worker,
 		ramster_remotify_process);
 
-static void ramster_remotify_queue_delayed_work(unsigned long delay)
+static void ramster_remotify_mod_delayed_work(unsigned long delay)
 {
-	if (!queue_delayed_work(ramster_remotify_workqueue,
+	if (!mod_delayed_work(ramster_remotify_workqueue,
 				&ramster_remotify_worker, delay))
 		pr_err("ramster_remotify: bad workqueue\n");
 }
@@ -983,7 +983,7 @@ static void ramster_remotify_process(struct work_struct *work)
 
 	BUG_ON(irqs_disabled());
 	if (remotify_in_progress)
-		ramster_remotify_queue_delayed_work(HZ);
+		ramster_remotify_mod_delayed_work(HZ);
 	else if (ramster_remote_target_nodenum != -1) {
 		remotify_in_progress = true;
 #ifdef CONFIG_CLEANCACHE
@@ -995,7 +995,7 @@ static void ramster_remotify_process(struct work_struct *work)
 		zcache_do_remotify_ops(500); /* FIXME is this a good number? */
 #endif
 		remotify_in_progress = false;
-		ramster_remotify_queue_delayed_work(HZ);
+		ramster_remotify_mod_delayed_work(HZ);
 	}
 }
 
@@ -1004,7 +1004,7 @@ static void ramster_remotify_init(void)
 	unsigned long n = 60UL;
 	ramster_remotify_workqueue =
 		create_singlethread_workqueue("ramster_remotify");
-	ramster_remotify_queue_delayed_work(n * HZ);
+	ramster_remotify_mod_delayed_work(n * HZ);
 }
 
 

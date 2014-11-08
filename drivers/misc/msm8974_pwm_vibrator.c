@@ -215,7 +215,7 @@ static int vibrator_pwm_set(int enable, int amp, int n_value)
 static inline void vibrator_schedule_work(struct delayed_work *work,
 		unsigned long delay)
 {
-	queue_delayed_work(vibrator_workqueue, work, delay);
+	mod_delayed_work(vibrator_workqueue, work, delay);
 }
 #else
 static inline void vibrator_schedule_work(struct delayed_work *work,

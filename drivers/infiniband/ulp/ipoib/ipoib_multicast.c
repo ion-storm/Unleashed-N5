@@ -402,7 +402,7 @@ static int ipoib_mcast_join_complete(int status,
 		mcast->backoff = 1;
 		mutex_lock(&mcast_mutex);
 		if (test_bit(IPOIB_MCAST_RUN, &priv->flags))
-			queue_delayed_work(ipoib_workqueue,
+			mod_delayed_work(ipoib_workqueue,
 					   &priv->mcast_task, 0);
 		mutex_unlock(&mcast_mutex);
 
@@ -436,7 +436,7 @@ static int ipoib_mcast_join_complete(int status,
 	mutex_lock(&mcast_mutex);
 	spin_lock_irq(&priv->lock);
 	if (test_bit(IPOIB_MCAST_RUN, &priv->flags))
-		queue_delayed_work(ipoib_workqueue, &priv->mcast_task,
+		mod_delayed_work(ipoib_workqueue, &priv->mcast_task,
 				   mcast->backoff * HZ);
 	spin_unlock_irq(&priv->lock);
 	mutex_unlock(&mcast_mutex);
@@ -504,7 +504,7 @@ static void ipoib_mcast_join(struct net_device *dev, struct ipoib_mcast *mcast,
 
 		mutex_lock(&mcast_mutex);
 		if (test_bit(IPOIB_MCAST_RUN, &priv->flags))
-			queue_delayed_work(ipoib_workqueue,
+			mod_delayed_work(ipoib_workqueue,
 					   &priv->mcast_task,
 					   mcast->backoff * HZ);
 		mutex_unlock(&mcast_mutex);
@@ -545,7 +545,7 @@ void ipoib_mcast_join_task(struct work_struct *work)
 			ipoib_warn(priv, "failed to allocate broadcast group\n");
 			mutex_lock(&mcast_mutex);
 			if (test_bit(IPOIB_MCAST_RUN, &priv->flags))
-				queue_delayed_work(ipoib_workqueue,
+				mod_delayed_work(ipoib_workqueue,
 						   &priv->mcast_task, HZ);
 			mutex_unlock(&mcast_mutex);
 			return;
@@ -610,7 +610,7 @@ int ipoib_mcast_start_thread(struct net_device *dev)
 
 	mutex_lock(&mcast_mutex);
 	if (!test_and_set_bit(IPOIB_MCAST_RUN, &priv->flags))
-		queue_delayed_work(ipoib_workqueue, &priv->mcast_task, 0);
+		mod_delayed_work(ipoib_workqueue, &priv->mcast_task, 0);
 	mutex_unlock(&mcast_mutex);
 
 	return 0;

@@ -2066,7 +2066,7 @@ static void queue_con(struct ceph_connection *con)
 		return;
 	}
 
-	if (!queue_delayed_work(ceph_msgr_wq, &con->work, 0)) {
+	if (!mod_delayed_work(ceph_msgr_wq, &con->work, 0)) {
 		dout("queue_con %p - already queued\n", con);
 		con->ops->put(con);
 	} else {
@@ -2087,7 +2087,7 @@ static void con_work(struct work_struct *work)
 restart:
 	if (test_and_clear_bit(BACKOFF, &con->state)) {
 		dout("con_work %p backing off\n", con);
-		if (queue_delayed_work(ceph_msgr_wq, &con->work,
+		if (mod_delayed_work(ceph_msgr_wq, &con->work,
 				       round_jiffies_relative(con->delay))) {
 			dout("con_work %p backoff %lu\n", con, con->delay);
 			mutex_unlock(&con->mutex);
@@ -2186,7 +2186,7 @@ static void ceph_fault(struct ceph_connection *con)
 		else if (con->delay < MAX_DELAY_INTERVAL)
 			con->delay *= 2;
 		con->ops->get(con);
-		if (queue_delayed_work(ceph_msgr_wq, &con->work,
+		if (mod_delayed_work(ceph_msgr_wq, &con->work,
 				       round_jiffies_relative(con->delay))) {
 			dout("fault queued %p delay %lu\n", con, con->delay);
 		} else {
