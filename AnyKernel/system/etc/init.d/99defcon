@@ -75,11 +75,11 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	echo "HYPER" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
 	echo "HYPER" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
 	echo "HYPER" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
-	echo "384000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-	echo "384000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
-	echo "384000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
-	echo "384000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
-	#echo "1" > /sys/devices/system/cpu/cpufreq/HYPER/io_is_busy
+	echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+	echo "300000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+	echo "300000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
+	echo "300000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
+	echo "1" > /sys/devices/system/cpu/cpufreq/HYPER/io_is_busy
 	#echo "85" > /sys/devices/system/cpu/cpufreq/HYPER/up_threshold
 	#echo "85" > /sys/devices/system/cpu/cpufreq/HYPER/micro_freq_up_threshold
 	#echo "[defcon] HYPER CPU Governor activated" | tee /dev/kmsg
@@ -122,24 +122,13 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	echo "73" > /sys/module/sweep2wake/parameters/up_kcal
 	echo "[defcon] sweep2dim enabled!" | tee /dev/kmsg
 
-# Set RGB KCAL
-if [ -e /sys/devices/platform/kcal_ctrl.0/kcal ]; then
-	sd_r=255
-	sd_g=255
-	sd_b=255
-	kcal="$sd_r $sd_g $sd_b"
-	echo "$kcal" > /sys/devices/platform/kcal_ctrl.0/kcal
-	echo "1" > /sys/devices/platform/kcal_ctrl.0/kcal_ctrl
-	echo "[defcon] LCD_KCAL: red=[$sd_r], green=[$sd_g], blue=[$sd_b]" | tee /dev/kmsg
-fi
-
 # disable sysctl.conf to prevent ROM interference with tunables
 	$bb mount -o rw,remount /system
 	$bb [ -e /system/etc/sysctl.conf ] && $bb mv -f /system/etc/sysctl.conf /system/etc/sysctl.conf.fkbak
 
 # disable the PowerHAL since there is a kernel-side touch boost implemented
-	$bb [ -e /system/lib/hw/power.msm8960.so.fkbak ] || $bb cp /system/lib/hw/power.msm8960.so /system/lib/hw/power.msm8960.so.fkbak
-	$bb [ -e /system/lib/hw/power.msm8960.so ] && $bb rm -f /system/lib/hw/power.msm8960.so
+	$bb [ -e /system/lib/hw/power.msm8974.so.fkbak ] || $bb cp /system/lib/hw/power.msm8960.so /system/lib/hw/power.msm8960.so.fkbak
+	$bb [ -e /system/lib/hw/power.msm8974.so ] && $bb rm -f /system/lib/hw/power.msm8974.so
 
 # create and set permissions for /system/etc/init.d if it doesn't already exist
 	$bb mkdir /system/etc/init.d;
@@ -154,12 +143,12 @@ fi
 	echo "[defcon] LMK permissions set" | tee /dev/kmsg
 
 # Interactive Options
-	echo 20000 1300000:40000 1400000:20000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
-	echo 85 1300000:90 1400000:70 > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+	#echo 20000 1300000:40000 1400000:20000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+	#echo 85 1300000:90 1400000:70 > /sys/devices/system/cpu/cpufreq/interactive/target_loads
 
 # GPU Settings
-	echo "400000000" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk
-	echo "interactive" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/pwrscale/trustzone/governor
+	#echo "400000000" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk
+	#echo "interactive" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/pwrscale/trustzone/governor
 	echo "[defcon] GPU Settings Set" | tee /dev/kmsg
 
 # disable debugging on some modules
