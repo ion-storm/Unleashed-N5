@@ -37,6 +37,7 @@ endif
 obj-$(CONFIG_ARCH_MSM_KRAIT) += msm-krait-l2-accessors.o
 obj-$(CONFIG_ARCH_MSM_KRAIT) += krait-scm.o
 ifdef CONFIG_HW_PERF_EVENTS
+# obj-$(CONFIG_ARCH_MSM_KRAIT) += perf_event_msm_krait_l2.o
 obj-$(CONFIG_ARCH_MSM7X27A) += perf_event_msm_pl310.o
 obj-$(CONFIG_ARCH_MSM9625) += perf_event_msm_pl310.o
 obj-$(CONFIG_ARCH_MSM8625) += perf_event_msm_pl310.o
@@ -76,8 +77,8 @@ target += smd_rpc_sym.c
 $(obj)/smd_rpc_sym.c: $(src)/smd_rpc_sym $(src)/mkrpcsym.pl
 	$(call if_changed,mkrpcsym)
 
-obj-$(CONFIG_MSM_SMD) += smd.o smd_debug.o remote_spinlock.o smd_private.o smem.o
-obj-$(CONFIG_MSM_SMP2P) += smp2p.o smp2p_debug.o smp2p_gpio.o
+obj-$(CONFIG_MSM_SMD) += smd.o remote_spinlock.o smd_private.o smem.o
+obj-$(CONFIG_MSM_SMP2P) += smp2p.o smp2p_gpio.o
 obj-$(CONFIG_MSM_SMP2P_TEST) += smp2p_loopback.o smp2p_test.o smp2p_gpio_test.o smp2p_spinlock_test.o
 obj-$(CONFIG_MSM_SCM) += scm.o scm-boot.o
 obj-$(CONFIG_MSM_XPU_ERR_FATAL) += scm-xpu.o
@@ -439,3 +440,4 @@ obj-$(CONFIG_MSM_HOTPLUG) += msm_hotplug.o
 obj-$(CONFIG_INTELLI_HOTPLUG) += intelli_hotplug.o
 obj-$(CONFIG_MSM_LIMITER) += msm_limiter.o
 obj-$(CONFIG_FORCE_FAST_CHARGE) += fastchg.o
+obj-$(CONFIG_HAS_MACH_MEMUTILS) += memutils/
