@@ -2195,7 +2195,6 @@ __acquires(&pool->lock)
 		       current->comm, preempt_count(), task_pid_nr(current),
 		       worker->current_func);
 		debug_show_held_locks(current);
-		BUG_ON(PANIC_CORRUPTION);
 		dump_stack();
 	}
 
@@ -2378,6 +2377,7 @@ repeat:
 		__set_current_state(TASK_RUNNING);
 		rescuer->task->flags &= ~PF_WQ_WORKER;
 		return 0;
+	}
 
 	/*
 	 * See whether any cpu is asking for help.  Unbounded
