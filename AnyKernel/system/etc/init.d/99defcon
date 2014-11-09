@@ -37,23 +37,15 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 # max_cpus_online <---
 # cpus_boosted = max cpus boosted
 # max_cpus_online_susp = max cpu's while suspended
-	echo "1" > /sys/kernel/intelli_plug/intelli_plug_active
-	echo "0" > /sys/kernel/intelli_plug/parameters/full_mode_profile
-	echo "4" > /sys/kernel/intelli_plug/max_cpus_online
-	echo "1" > /sys/kernel/intelli_plug/min_cpus_online
-	echo "3" > /sys/kernel/intelli_plug/cpus_boosted
-	echo "1" > /sys/kernel/intelli_plug/max_cpus_online_susp
-	echo "722" > /sys/kernel/intelli_plug/parameters/cpu_nr_run_threshold
-	echo "8" > /sys/kernel/intelli_plug/parameters/nr_run_hysteresis
-	echo "[defcon] Intelliplug fully optimized!" | tee /dev/kmsg
-
-# Stratosk dyn_hotplug Settings
-	echo "4" > /sys/module/dyn_hotplug/parameters/max_online
-	echo "10" > /sys/module/dyn_hotplug/parameters/down_timer_cnt
-	echo "2" > /sys/module/dyn_hotplug/parameters/up_timer_cnt
-	echo "25" > /sys/module/dyn_hotplug/parameters/up_threshold
-	echo "1" > /sys/module/dyn_hotplug/parameters/min_online
-	echo "[defcon] Dyn_hotplug fully optimized!" | tee /dev/kmsg
+	#echo "1" > /sys/kernel/intelli_plug/intelli_plug_active
+	#echo "0" > /sys/kernel/intelli_plug/parameters/full_mode_profile
+	#echo "4" > /sys/kernel/intelli_plug/max_cpus_online
+	#echo "1" > /sys/kernel/intelli_plug/min_cpus_online
+	#echo "3" > /sys/kernel/intelli_plug/cpus_boosted
+	#echo "1" > /sys/kernel/intelli_plug/max_cpus_online_susp
+	#echo "722" > /sys/kernel/intelli_plug/parameters/cpu_nr_run_threshold
+	#echo "8" > /sys/kernel/intelli_plug/parameters/nr_run_hysteresis
+	#echo "[defcon] Intelliplug fully optimized!" | tee /dev/kmsg
 
 # Tweak AutoSMP Hotplug
 	echo "67" > /sys/kernel/autosmp/conf/cpufreq_down
@@ -71,15 +63,15 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	echo "[defcon] TCP set: westwood" | tee /dev/kmsg
 
 # Set HYPER as default CPU governor:	
-	echo "HYPER" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-	echo "HYPER" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
-	echo "HYPER" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
-	echo "HYPER" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
-	echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-	echo "300000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
-	echo "300000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
-	echo "300000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
-	echo "1" > /sys/devices/system/cpu/cpufreq/HYPER/io_is_busy
+	#echo "bacon" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+	#echo "bacon" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+	#echo "bacon" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+	#echo "bacon" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+	#echo "300000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+	#echo "300000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+	#echo "300000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
+	#echo "300000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
+	#echo "1" > /sys/devices/system/cpu/cpufreq/HYPER/io_is_busy
 	#echo "85" > /sys/devices/system/cpu/cpufreq/HYPER/up_threshold
 	#echo "85" > /sys/devices/system/cpu/cpufreq/HYPER/micro_freq_up_threshold
 	#echo "[defcon] HYPER CPU Governor activated" | tee /dev/kmsg
@@ -116,11 +108,11 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	echo "[defcon] IOSched readahead set to: 2048" | tee /dev/kmsg
 	
 # Sweep2Dim default
-	echo "0" > /sys/android_touch/sweep2wake
-	echo "1" > /sys/android_touch/sweep2dim
-	echo "73" > /sys/module/sweep2wake/parameters/down_kcal
-	echo "73" > /sys/module/sweep2wake/parameters/up_kcal
-	echo "[defcon] sweep2dim enabled!" | tee /dev/kmsg
+	#echo "0" > /sys/android_touch/sweep2wake
+	#echo "1" > /sys/android_touch/sweep2dim
+	#echo "73" > /sys/module/sweep2wake/parameters/down_kcal
+	#echo "73" > /sys/module/sweep2wake/parameters/up_kcal
+	#echo "[defcon] sweep2dim enabled!" | tee /dev/kmsg
 
 # disable sysctl.conf to prevent ROM interference with tunables
 	$bb mount -o rw,remount /system
@@ -160,44 +152,44 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	echo "[defcon] Misc Debugging disabled" | tee /dev/kmsg
 
 # VM Tweaks
-	echo "4096" > /proc/sys/vm/min_free_kbytes;
-	echo "0" > /proc/sys/vm/oom_kill_allocating_task;
-	echo "0" > /proc/sys/vm/panic_on_oom;
-	echo "0" > /proc/sys/vm/laptop_mode;
-	echo "60" > /proc/sys/vm/swappiness;
-	echo "40" > /proc/sys/vm/vfs_cache_pressure;
-	echo "90" > /proc/sys/vm/dirty_ratio;
-	echo "1" > /proc/sys/vm/overcommit_memory;
-	echo "4" > /proc/sys/vm/min_free_order_shift;
-	echo "1" > /proc/sys/vm/oom_dump_tasks;
-	echo "1000" > /proc/sys/vm/dirty_writeback_centisecs;
-	echo "500" > /proc/sys/vm/dirty_expire_centisecs;
-	echo "8" > /proc/sys/vm/page-cluster;
-	echo "3" > /proc/sys/vm/drop_caches
-	echo "0" > /sys/kernel/sched/arch_power
-	echo "0" > /sys/kernel/sched/gentle_fair_sleepers
-	echo "[defcon] VM Tweaks completed!" | tee /dev/kmsg
+	#echo "4096" > /proc/sys/vm/min_free_kbytes;
+	#echo "0" > /proc/sys/vm/oom_kill_allocating_task;
+	#echo "0" > /proc/sys/vm/panic_on_oom;
+	#echo "0" > /proc/sys/vm/laptop_mode;
+	#echo "60" > /proc/sys/vm/swappiness;
+	#echo "40" > /proc/sys/vm/vfs_cache_pressure;
+	#echo "90" > /proc/sys/vm/dirty_ratio;
+	#echo "1" > /proc/sys/vm/overcommit_memory;
+	#echo "4" > /proc/sys/vm/min_free_order_shift;
+	#echo "1" > /proc/sys/vm/oom_dump_tasks;
+	#echo "1000" > /proc/sys/vm/dirty_writeback_centisecs;
+	#echo "500" > /proc/sys/vm/dirty_expire_centisecs;
+	#echo "8" > /proc/sys/vm/page-cluster;
+	#echo "3" > /proc/sys/vm/drop_caches
+	#echo "0" > /sys/kernel/sched/arch_power
+	#echo "0" > /sys/kernel/sched/gentle_fair_sleepers
+	#echo "[defcon] VM Tweaks completed!" | tee /dev/kmsg
 
 # Filesystem Tweaks
-	echo "10" > /proc/sys/fs/lease-break-time;
-	echo "32000" > /proc/sys/fs/inotify/max_queued_events;
-	echo "524288" > /proc/sys/fs/file-max;
-	echo "256" > /proc/sys/fs/inotify/max_user_instances;
-	echo "10240" > /proc/sys/fs/inotify/max_user_watches;
-	echo "[defcon] Filesystem Tweaks completed!" | tee /dev/kmsg
+	#echo "10" > /proc/sys/fs/lease-break-time;
+	#echo "32000" > /proc/sys/fs/inotify/max_queued_events;
+	#echo "524288" > /proc/sys/fs/file-max;
+	#echo "256" > /proc/sys/fs/inotify/max_user_instances;
+	#echo "10240" > /proc/sys/fs/inotify/max_user_watches;
+	#echo "[defcon] Filesystem Tweaks completed!" | tee /dev/kmsg
 
 # Misc Kernel-Tweaks
-	echo "1000000" > /proc/sys/kernel/sched_min_granularity_ns;
-	echo "18000000" > /proc/sys/kernel/sched_latency_ns;
-	echo "3000000" > /proc/sys/kernel/sched_wakeup_granularity_ns;
-	echo "0" > /proc/sys/kernel/panic;
-	echo "1" > /proc/sys/kernel/panic_on_oops;
-	echo "64000" > /proc/sys/kernel/msgmni;
-	echo "64000" > /proc/sys/kernel/msgmax;
-	echo "4096" > /proc/sys/kernel/shmmni;
-	echo "2097152" > /proc/sys/kernel/shmall;
-	echo "536870912" > /proc/sys/kernel/shmmax;
-	echo "524288" > /proc/sys/kernel/threads-max;
-	echo "500 512000 64 2048" > /proc/sys/kernel/sem;
-	echo "0" > /proc/sys/kernel/sched_child_runs_first;
-	echo "[defcon] Misc Kernel Tweaks completed!" | tee /dev/kmsg
+	#echo "1000000" > /proc/sys/kernel/sched_min_granularity_ns;
+	#echo "18000000" > /proc/sys/kernel/sched_latency_ns;
+	#echo "3000000" > /proc/sys/kernel/sched_wakeup_granularity_ns;
+	#echo "0" > /proc/sys/kernel/panic;
+	#echo "1" > /proc/sys/kernel/panic_on_oops;
+	#echo "64000" > /proc/sys/kernel/msgmni;
+	#echo "64000" > /proc/sys/kernel/msgmax;
+	#echo "4096" > /proc/sys/kernel/shmmni;
+	#echo "2097152" > /proc/sys/kernel/shmall;
+	#echo "536870912" > /proc/sys/kernel/shmmax;
+	#echo "524288" > /proc/sys/kernel/threads-max;
+	#echo "500 512000 64 2048" > /proc/sys/kernel/sem;
+	#echo "0" > /proc/sys/kernel/sched_child_runs_first;
+	#echo "[defcon] Misc Kernel Tweaks completed!" | tee /dev/kmsg

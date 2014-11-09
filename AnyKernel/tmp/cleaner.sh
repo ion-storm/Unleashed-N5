@@ -4,6 +4,7 @@
 rm -rf /system/bin/thermald
 rm -rf /system/bin/mpdecision
 rm -rf /system/lib/hw/power.msm8974.so
+rm -rf /system/lib/hw/power.msm8960.so
 # clean init.d scripts
 INITD_DIR=/system/etc/init.d
 # Trinity
