@@ -32,6 +32,8 @@
 #include <linux/completion.h>
 #include <linux/mutex.h>
 #include <linux/syscore_ops.h>
+#include <linux/kernel_stat.h>
+#include <linux/pm_qos.h>
 
 #include <trace/events/power.h>
 
@@ -137,7 +139,7 @@ static int __init init_cpufreq_transition_notifier_list(void)
 pure_initcall(init_cpufreq_transition_notifier_list);
 
 static int off __read_mostly;
-int cpufreq_disabled(void)
+static int cpufreq_disabled(void)
 {
 	return off;
 }
@@ -360,10 +362,6 @@ void cpufreq_notify_utilization(struct cpufreq_policy *policy,
 {
 	if (policy)
 		policy->util = util;
-
-	if (policy->util >= MIN_CPU_UTIL_NOTIFY)
-		sysfs_notify(&policy->kobj, NULL, "cpu_utilization");
-
 }
 
 /*********************************************************************
@@ -430,7 +428,6 @@ out:
 	return err;
 }
 
-
 /**
  * cpufreq_per_cpu_attr_read() / show_##file_name() -
  * print out cpufreq information
@@ -462,7 +459,7 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 /**
  * cpufreq_per_cpu_attr_write() / store_##file_name() - sysfs write access
  */
-#define store_one(file_name, object)			\
+#define store_one(file_name, object)					\
 static ssize_t store_##file_name					\
 (struct cpufreq_policy *policy, const char *buf, size_t count)		\
 {									\
@@ -488,12 +485,172 @@ static ssize_t store_##file_name					\
 	policy->user_policy.max = new_policy.max;			\
 									\
 	ret = __cpufreq_set_policy(policy, &new_policy);		\
+	policy->user_policy.object = new_policy.object;			\
 									\
 	return ret ? ret : count;					\
 }
 
 store_one(scaling_min_freq, min);
 store_one(scaling_max_freq, max);
+
+#ifdef CONFIG_MULTI_CPU_POLICY_LIMIT
+#define show_scaling_freq(file_name, object)				\
+static ssize_t show_##file_name						\
+(struct kobject *a, struct attribute *b, char *buf)			\
+{									\
+	struct cpufreq_policy *cpu_policy;				\
+	unsigned int freq = 0;						\
+									\
+	cpu_policy = __cpufreq_cpu_get(0, 1);				\
+	if (!cpu_policy)						\
+		return -EINVAL;						\
+									\
+	if (lock_policy_rwsem_read(cpu_policy->cpu) < 0) {		\
+		__cpufreq_cpu_put(cpu_policy, 1);			\
+		return -EINVAL;						\
+	}								\
+									\
+	freq = cpu_policy->object;					\
+									\
+	unlock_policy_rwsem_read(cpu_policy->cpu);			\
+									\
+	__cpufreq_cpu_put(cpu_policy, 1);				\
+									\
+	return sprintf(buf, "%u\n", freq);				\
+}
+show_scaling_freq(scaling_min_freq_all_cpus, min);
+show_scaling_freq(scaling_max_freq_all_cpus, max);
+
+#define show_pcpu_scaling_freq(file_name, object, num_core)		\
+static ssize_t show_##file_name##num_core				\
+(struct kobject *a, struct attribute *b, char *buf)			\
+{									\
+	struct cpufreq_policy *cpu_policy;				\
+	unsigned int freq = 0;						\
+									\
+	get_online_cpus();						\
+	if (!cpu_online(num_core)) {					\
+		freq = per_cpu(cpufreq_policy_save, num_core).object;	\
+	} else {							\
+		cpu_policy = __cpufreq_cpu_get(num_core, 1);		\
+		if (!cpu_policy) {					\
+			put_online_cpus();				\
+			return -EINVAL;					\
+		}							\
+									\
+		if (lock_policy_rwsem_read(num_core) < 0) {		\
+			__cpufreq_cpu_put(cpu_policy, 1);		\
+			put_online_cpus();				\
+			return -EINVAL;					\
+		}							\
+									\
+		freq = cpu_policy->object;				\
+									\
+		unlock_policy_rwsem_read(num_core);			\
+									\
+		__cpufreq_cpu_put(cpu_policy, 1);			\
+	}								\
+	put_online_cpus();						\
+									\
+	return sprintf(buf, "%u\n", freq);				\
+}
+show_pcpu_scaling_freq(scaling_min_freq_cpu, min, 0);
+show_pcpu_scaling_freq(scaling_min_freq_cpu, min, 1);
+show_pcpu_scaling_freq(scaling_min_freq_cpu, min, 2);
+show_pcpu_scaling_freq(scaling_min_freq_cpu, min, 3);
+show_pcpu_scaling_freq(scaling_max_freq_cpu, max, 0);
+show_pcpu_scaling_freq(scaling_max_freq_cpu, max, 1);
+show_pcpu_scaling_freq(scaling_max_freq_cpu, max, 2);
+show_pcpu_scaling_freq(scaling_max_freq_cpu, max, 3);
+
+#define store_scaling_freq(file_name, ref_store_name, object)			\
+static ssize_t store_##file_name						\
+(struct kobject *a, struct attribute *b, const char *buf, size_t count)		\
+{										\
+	unsigned int cpu;							\
+	unsigned int freq = 0;							\
+	unsigned int ret;							\
+										\
+	ret = sscanf(buf, "%u", &freq);						\
+	if (ret != 1)								\
+		return -EINVAL;							\
+										\
+	get_online_cpus();							\
+	for_each_possible_cpu(cpu) {						\
+		struct cpufreq_policy *cpu_policy;				\
+										\
+		if (!cpu_online(cpu)) {						\
+			per_cpu(cpufreq_policy_save, cpu).object = freq;	\
+			continue;						\
+		}								\
+		cpu_policy = __cpufreq_cpu_get(cpu, 1);				\
+		if (!cpu_policy)						\
+			continue;						\
+										\
+		if (lock_policy_rwsem_write(cpu) < 0) {				\
+			__cpufreq_cpu_put(cpu_policy, 1);			\
+			continue;						\
+		}								\
+										\
+		ret = store_##ref_store_name(cpu_policy, buf, count);		\
+										\
+		unlock_policy_rwsem_write(cpu);					\
+										\
+		__cpufreq_cpu_put(cpu_policy, 1);				\
+	}									\
+	put_online_cpus();							\
+										\
+	return count;								\
+}
+store_scaling_freq(scaling_min_freq_all_cpus, scaling_min_freq, min);
+store_scaling_freq(scaling_max_freq_all_cpus, scaling_max_freq, max);
+
+#define store_pcpu_scaling_freq(file_name, ref_store_name, object, num_core)	\
+static ssize_t store_##file_name##num_core					\
+(struct kobject *a, struct attribute *b, const char *buf, size_t count)		\
+{										\
+	struct cpufreq_policy *cpu_policy;					\
+	unsigned int freq = 0;							\
+	unsigned int ret;							\
+										\
+	ret = sscanf(buf, "%u", &freq);						\
+	if (ret != 1)								\
+		return -EINVAL;							\
+										\
+	get_online_cpus();							\
+	if (!cpu_online(num_core)) {						\
+		per_cpu(cpufreq_policy_save, num_core).object = freq;		\
+	} else {								\
+		cpu_policy = __cpufreq_cpu_get(num_core, 1);			\
+		if (!cpu_policy) {						\
+			put_online_cpus();					\
+			return -EINVAL;						\
+		}								\
+										\
+		if (lock_policy_rwsem_write(num_core) < 0) {			\
+			__cpufreq_cpu_put(cpu_policy, 1);			\
+			put_online_cpus();					\
+			return -EINVAL;						\
+		}								\
+										\
+		ret = store_##ref_store_name(cpu_policy, buf, count);		\
+										\
+		unlock_policy_rwsem_write(num_core);				\
+										\
+		__cpufreq_cpu_put(cpu_policy, 1);				\
+	}									\
+	put_online_cpus();							\
+	return count;								\
+}
+store_pcpu_scaling_freq(scaling_min_freq_cpu, scaling_min_freq, min, 0);
+store_pcpu_scaling_freq(scaling_min_freq_cpu, scaling_min_freq, min, 1);
+store_pcpu_scaling_freq(scaling_min_freq_cpu, scaling_min_freq, min, 2);
+store_pcpu_scaling_freq(scaling_min_freq_cpu, scaling_min_freq, min, 3);
+store_pcpu_scaling_freq(scaling_max_freq_cpu, scaling_max_freq, max, 0);
+store_pcpu_scaling_freq(scaling_max_freq_cpu, scaling_max_freq, max, 1);
+store_pcpu_scaling_freq(scaling_max_freq_cpu, scaling_max_freq, max, 2);
+store_pcpu_scaling_freq(scaling_max_freq_cpu, scaling_max_freq, max, 3);
+#endif
 
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
@@ -530,7 +687,7 @@ static ssize_t show_scaling_governor(struct cpufreq_policy *policy, char *buf)
 static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 					const char *buf, size_t count)
 {
-	unsigned int ret = -EINVAL;
+	unsigned int ret;
 	char	str_governor[16];
 	struct cpufreq_policy new_policy;
 
@@ -562,6 +719,175 @@ static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 	else
 		return count;
 }
+
+#ifdef CONFIG_MULTI_CPU_POLICY_LIMIT
+/**
+ * show_scaling_governor_all_cpus - show the current policy for the specified CPU
+ */
+static ssize_t show_scaling_governor_all_cpus(struct kobject *a, struct attribute *b, char *buf)
+{
+	struct cpufreq_policy *cpu_policy;
+	char str_governor[16];
+
+	cpu_policy = __cpufreq_cpu_get(0, 1);
+	if (!cpu_policy)
+		return -EINVAL;
+
+	if (lock_policy_rwsem_read(cpu_policy->cpu) < 0) {
+		__cpufreq_cpu_put(cpu_policy, 1);
+		return -EINVAL;
+	}
+
+	if (cpu_policy->policy == CPUFREQ_POLICY_POWERSAVE)
+		sprintf(str_governor, "powersave\n");
+	else if (cpu_policy->policy == CPUFREQ_POLICY_PERFORMANCE)
+		sprintf(str_governor, "performance\n");
+	else if (cpu_policy->governor)
+		scnprintf(str_governor, CPUFREQ_NAME_LEN, "%s\n",
+				cpu_policy->governor->name);
+
+	unlock_policy_rwsem_read(cpu_policy->cpu);
+
+	__cpufreq_cpu_put(cpu_policy, 1);
+
+	return scnprintf(buf, CPUFREQ_NAME_LEN, "%s\n",
+				str_governor);
+}
+
+#define show_pcpu_scaling_governor(num_core)						\
+static ssize_t show_scaling_governor_cpu##num_core					\
+(struct kobject *a, struct attribute *b, char *buf)					\
+{											\
+	struct cpufreq_policy *cpu_policy;						\
+	char str_governor[16];								\
+											\
+	get_online_cpus();								\
+	if (!cpu_online(num_core)) {							\
+		strncpy(str_governor, per_cpu(cpufreq_policy_save, num_core).gov,	\
+				CPUFREQ_NAME_LEN);					\
+	} else {									\
+		cpu_policy = __cpufreq_cpu_get(num_core, 1);				\
+		if (!cpu_policy) {							\
+			put_online_cpus();						\
+			return -EINVAL;							\
+		}									\
+											\
+		if (lock_policy_rwsem_read(num_core) < 0) {				\
+			__cpufreq_cpu_put(cpu_policy, 1);				\
+			put_online_cpus();						\
+			return -EINVAL;							\
+		}									\
+											\
+		if (cpu_policy->policy == CPUFREQ_POLICY_POWERSAVE)			\
+			sprintf(str_governor, "powersave\n");				\
+		else if (cpu_policy->policy == CPUFREQ_POLICY_PERFORMANCE)		\
+			sprintf(str_governor, "performance\n");				\
+		else if (cpu_policy->governor)						\
+			scnprintf(str_governor, CPUFREQ_NAME_LEN, "%s\n",		\
+					cpu_policy->governor->name);			\
+											\
+		unlock_policy_rwsem_read(num_core);					\
+											\
+		__cpufreq_cpu_put(cpu_policy, 1);					\
+	}										\
+	put_online_cpus();								\
+											\
+	return scnprintf(buf, CPUFREQ_NAME_LEN, "%s\n",					\
+				str_governor);						\
+}
+show_pcpu_scaling_governor(0);
+show_pcpu_scaling_governor(1);
+show_pcpu_scaling_governor(2);
+show_pcpu_scaling_governor(3);
+
+/**
+ * store_scaling_governor_all_cpus - store policy governor for the all CPUs
+ */
+static ssize_t store_scaling_governor_all_cpus(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	char str_governor[16];
+	unsigned int cpu;
+	unsigned int ret;
+
+	ret = sscanf(buf, "%15s", str_governor);
+	if (ret != 1)
+		return -EINVAL;
+
+	get_online_cpus();
+	for_each_possible_cpu(cpu) {
+		struct cpufreq_policy *cpu_policy;
+
+#ifdef CONFIG_HOTPLUG_CPU
+		if (!cpu_online(cpu)) {
+			strncpy(per_cpu(cpufreq_policy_save, cpu).gov, str_governor,
+				CPUFREQ_NAME_LEN);
+			continue;
+		}
+#endif
+		cpu_policy = __cpufreq_cpu_get(cpu, 1);
+		if (!cpu_policy)
+			continue;
+
+		if (lock_policy_rwsem_write(cpu) < 0) {
+			__cpufreq_cpu_put(cpu_policy, 1);
+			continue;
+		}
+
+		ret = store_scaling_governor(cpu_policy, buf, count);
+
+		unlock_policy_rwsem_write(cpu);
+
+		__cpufreq_cpu_put(cpu_policy, 1);
+	}
+	put_online_cpus();
+
+	return count;
+}
+
+#define store_pcpu_scaling_governor(num_core)						\
+static ssize_t store_scaling_governor_cpu##num_core					\
+(struct kobject *a, struct attribute *b, const char *buf, size_t count)			\
+{											\
+	struct cpufreq_policy *cpu_policy;						\
+	char str_governor[16];								\
+	unsigned int ret;								\
+											\
+	ret = sscanf(buf, "%15s", str_governor);					\
+	if (ret != 1)									\
+		return -EINVAL;								\
+											\
+	get_online_cpus();								\
+	if (!cpu_online(num_core)) {							\
+		strncpy(per_cpu(cpufreq_policy_save, num_core).gov, str_governor,	\
+			CPUFREQ_NAME_LEN);						\
+	} else {									\
+		cpu_policy = __cpufreq_cpu_get(num_core, 1);				\
+		if (!cpu_policy) {							\
+			put_online_cpus();						\
+			return -EINVAL;							\
+		}									\
+											\
+		if (lock_policy_rwsem_write(num_core) < 0) {				\
+			__cpufreq_cpu_put(cpu_policy, 1);				\
+			put_online_cpus();						\
+			return -EINVAL;							\
+		}									\
+											\
+		ret = store_scaling_governor(cpu_policy, buf, count);			\
+											\
+		unlock_policy_rwsem_write(num_core);					\
+											\
+		__cpufreq_cpu_put(cpu_policy, 1);					\
+	}										\
+	put_online_cpus();								\
+											\
+	return count;									\
+}
+store_pcpu_scaling_governor(0);
+store_pcpu_scaling_governor(1);
+store_pcpu_scaling_governor(2);
+store_pcpu_scaling_governor(3);
+#endif
 
 /**
  * show_scaling_driver - show the cpufreq driver currently loaded
@@ -658,7 +984,7 @@ static ssize_t show_scaling_setspeed(struct cpufreq_policy *policy, char *buf)
 }
 
 /**
- * show_scaling_driver - show the current cpufreq HW/BIOS limitation
+ * show_bios_limit - show the current cpufreq HW/BIOS limitation
  */
 static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 {
@@ -702,6 +1028,23 @@ cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_ro(policy_min_freq);
 cpufreq_freq_attr_ro(policy_max_freq);
+#ifdef CONFIG_MULTI_CPU_POLICY_LIMIT
+define_one_global_rw(scaling_min_freq_all_cpus);
+define_one_global_rw(scaling_max_freq_all_cpus);
+define_one_global_rw(scaling_governor_all_cpus);
+define_one_global_rw(scaling_min_freq_cpu0);
+define_one_global_rw(scaling_min_freq_cpu1);
+define_one_global_rw(scaling_min_freq_cpu2);
+define_one_global_rw(scaling_min_freq_cpu3);
+define_one_global_rw(scaling_max_freq_cpu0);
+define_one_global_rw(scaling_max_freq_cpu1);
+define_one_global_rw(scaling_max_freq_cpu2);
+define_one_global_rw(scaling_max_freq_cpu3);
+define_one_global_rw(scaling_governor_cpu0);
+define_one_global_rw(scaling_governor_cpu1);
+define_one_global_rw(scaling_governor_cpu2);
+define_one_global_rw(scaling_governor_cpu3);
+#endif
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -721,6 +1064,32 @@ static struct attribute *default_attrs[] = {
 	&policy_max_freq.attr,
 	NULL
 };
+
+#ifdef CONFIG_MULTI_CPU_POLICY_LIMIT
+static struct attribute *all_cpus_attrs[] = {
+	&scaling_min_freq_all_cpus.attr,
+	&scaling_max_freq_all_cpus.attr,
+	&scaling_governor_all_cpus.attr,
+	&scaling_min_freq_cpu0.attr,
+	&scaling_min_freq_cpu1.attr,
+	&scaling_min_freq_cpu2.attr,
+	&scaling_min_freq_cpu3.attr,
+	&scaling_max_freq_cpu0.attr,
+	&scaling_max_freq_cpu1.attr,
+	&scaling_max_freq_cpu2.attr,
+	&scaling_max_freq_cpu3.attr,
+	&scaling_governor_cpu0.attr,
+	&scaling_governor_cpu1.attr,
+	&scaling_governor_cpu2.attr,
+	&scaling_governor_cpu3.attr,
+	NULL
+};
+
+static struct attribute_group all_cpus_attr_group = {
+	.attrs = all_cpus_attrs,
+	.name = "all_cpus",
+};
+#endif	/* CONFIG_MULTI_CPU_POLICY_LIMIT */
 
 struct kobject *cpufreq_global_kobject;
 EXPORT_SYMBOL(cpufreq_global_kobject);
@@ -856,12 +1225,17 @@ static int cpufreq_add_dev_policy(unsigned int cpu,
 				return -EBUSY;
 			}
 
+			__cpufreq_governor(managed_policy, CPUFREQ_GOV_STOP);
+
 			spin_lock_irqsave(&cpufreq_driver_lock, flags);
 			cpumask_copy(managed_policy->cpus, policy->cpus);
 			cpumask_and(managed_policy->cpus,
 					managed_policy->cpus, cpu_online_mask);
 			per_cpu(cpufreq_cpu_data, cpu) = managed_policy;
 			spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
+
+			__cpufreq_governor(managed_policy, CPUFREQ_GOV_START);
+			__cpufreq_governor(managed_policy, CPUFREQ_GOV_LIMITS);
 
 			pr_debug("CPU already managed, adding link\n");
 			ret = sysfs_create_link(&dev->kobj,
@@ -1087,8 +1461,17 @@ static int cpufreq_add_dev(struct device *dev, struct subsys_interface *sif)
 		pr_debug("initialization failed\n");
 		goto err_unlock_policy;
 	}
+
+	/*
+	 * affected cpus must always be the one, which are online. We aren't
+	 * managing offline cpus here.
+	 */
+	cpumask_and(policy->cpus, policy->cpus, cpu_online_mask);
+
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
+
+	policy->util = 0;
 
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 				     CPUFREQ_START, policy);
@@ -1176,8 +1559,13 @@ static int __cpufreq_remove_dev(struct device *dev, struct subsys_interface *sif
 	 */
 	if (unlikely(cpu != data->cpu)) {
 		pr_debug("removing link\n");
+		__cpufreq_governor(data, CPUFREQ_GOV_STOP);
 		cpumask_clear_cpu(cpu, data->cpus);
 		spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
+
+		__cpufreq_governor(data, CPUFREQ_GOV_START);
+		__cpufreq_governor(data, CPUFREQ_GOV_LIMITS);
+
 		kobj = &dev->kobj;
 		cpufreq_cpu_put(data);
 		unlock_policy_rwsem_write(cpu);
@@ -1333,6 +1721,26 @@ static void cpufreq_out_of_sync(unsigned int cpu, unsigned int old_freq,
 	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
 }
 
+/**
+ * cpufreq_quick_get_util - get the CPU utilization from policy->util
+ * @cpu: CPU number
+ *
+ * This is the last known util, without actually getting it from the driver.
+ * Return value will be same as what is shown in util in sysfs.
+ */
+unsigned int cpufreq_quick_get_util(unsigned int cpu)
+{
+	struct cpufreq_policy *policy = __cpufreq_cpu_get(cpu, 0);
+	unsigned int ret_util = 0;
+
+	if (policy) {
+		ret_util = policy->util;
+		__cpufreq_cpu_put(policy, 0);
+	}
+
+	return ret_util;
+}
+EXPORT_SYMBOL(cpufreq_quick_get_util);
 
 /**
  * cpufreq_quick_get - get the CPU frequency (in kHz) from policy->cur
@@ -1603,6 +2011,10 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 
 	pr_debug("target for CPU %u: %u kHz, relation %u\n", policy->cpu,
 		target_freq, relation);
+
+	if (target_freq == policy->cur)
+		return 0;
+
 	if (cpu_online(policy->cpu) && cpufreq_driver->target)
 		retval = cpufreq_driver->target(policy, target_freq, relation);
 
@@ -1637,6 +2049,9 @@ EXPORT_SYMBOL_GPL(cpufreq_driver_target);
 int __cpufreq_driver_getavg(struct cpufreq_policy *policy, unsigned int cpu)
 {
 	int ret = 0;
+
+	if (!(cpu_online(cpu) && cpufreq_driver->getavg))
+		return 0;
 
 	policy = cpufreq_cpu_get(policy->cpu);
 	if (!policy)
@@ -1787,7 +2202,6 @@ int cpufreq_get_policy(struct cpufreq_policy *policy, unsigned int cpu)
 }
 EXPORT_SYMBOL(cpufreq_get_policy);
 
-
 /*
  * data   : current policy.
  * policy : policy to be set.
@@ -1796,15 +2210,30 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				struct cpufreq_policy *policy)
 {
 	int ret = 0;
+#ifdef CONFIG_UNI_CPU_POLICY_LIMIT
+	struct cpufreq_policy *cpu0_policy = NULL;
+#endif
+	unsigned int qmin, qmax;
+	unsigned int pmin = policy->min;
+	unsigned int pmax = policy->max;
 
-	pr_debug("setting new policy for CPU %u: %u - %u kHz\n", policy->cpu,
-		policy->min, policy->max);
+	qmin = min((unsigned int)pm_qos_request(PM_QOS_CPU_FREQ_MIN),
+		   data->user_policy.max);
+	qmax = max((unsigned int)pm_qos_request(PM_QOS_CPU_FREQ_MAX),
+		   data->user_policy.min);
+
+	pr_debug("setting new policy for CPU %u: %u - %u (%u - %u) kHz\n",
+		policy->cpu, pmin, pmax, qmin, qmax);
+
+	/* clamp the new policy to PM QoS limits */
+	policy->min = max(pmin, qmin);
+	policy->max = min(pmax, qmax);
 
 	memcpy(&policy->cpuinfo, &data->cpuinfo,
 				sizeof(struct cpufreq_cpuinfo));
 
-	if (policy->min > data->user_policy.max
-		|| policy->max < data->user_policy.min) {
+	if (policy->min > data->user_policy.max ||
+	    policy->max < data->user_policy.min) {
 		ret = -EINVAL;
 		goto error_out;
 	}
@@ -1832,8 +2261,19 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 			CPUFREQ_NOTIFY, policy);
 
+#ifdef CONFIG_UNI_CPU_POLICY_LIMIT
+	if (policy->cpu) {
+		cpu0_policy = __cpufreq_cpu_get(0, 0);
+		data->min = cpu0_policy->min;
+		data->max = cpu0_policy->max;
+	} else {
+		data->min = policy->min;
+		data->max = policy->max;
+	}
+#else
 	data->min = policy->min;
 	data->max = policy->max;
+#endif
 
 	pr_debug("new min and max freqs are %u - %u kHz\n",
 					data->min, data->max);
@@ -1854,7 +2294,16 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				__cpufreq_governor(data, CPUFREQ_GOV_STOP);
 
 			/* start new governor */
+#ifdef CONFIG_UNI_CPU_POLICY_LIMIT
+			if (policy->cpu && cpu0_policy) {
+				data->governor = cpu0_policy->governor;
+			} else {
+				data->governor = policy->governor;
+			}
+#else
 			data->governor = policy->governor;
+#endif
+
 			if (__cpufreq_governor(data, CPUFREQ_GOV_START)) {
 				/* new governor failed, so re-start old one */
 				pr_debug("starting governor %s failed\n",
@@ -1874,6 +2323,14 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	}
 
 error_out:
+#ifdef CONFIG_UNI_CPU_POLICY_LIMIT
+	if (cpu0_policy) {
+		__cpufreq_cpu_put(cpu0_policy, 0);
+	}
+#endif
+	/* restore the limits that the policy requested */
+	policy->min = pmin;
+	policy->max = pmax;
 	return ret;
 }
 
@@ -1931,6 +2388,70 @@ no_policy:
 	return ret;
 }
 EXPORT_SYMBOL(cpufreq_update_policy);
+
+/*
+ *	cpufreq_set_gov - set governor for a cpu
+ *	@cpu: CPU whose governor needs to be changed
+ *	@target_gov: new governor to be set
+ */
+int cpufreq_set_gov(char *target_gov, unsigned int cpu)
+{
+	int ret = 0;
+	struct cpufreq_policy new_policy;
+	struct cpufreq_policy *cur_policy;
+
+	if (target_gov == NULL)
+		return -EINVAL;
+
+	/* Get current governer */
+	cur_policy = cpufreq_cpu_get(cpu);
+	if (!cur_policy)
+		return -EINVAL;
+
+	if (lock_policy_rwsem_read(cur_policy->cpu) < 0) {
+		ret = -EINVAL;
+		goto err_out;
+	}
+
+	if (cur_policy->governor)
+		ret = strncmp(cur_policy->governor->name, target_gov,
+					strlen(target_gov));
+	else {
+		unlock_policy_rwsem_read(cur_policy->cpu);
+		ret = -EINVAL;
+		goto err_out;
+	}
+	unlock_policy_rwsem_read(cur_policy->cpu);
+
+	if (!ret) {
+		pr_debug(" Target governer & current governer is same\n");
+		ret = -EINVAL;
+		goto err_out;
+	} else {
+		new_policy = *cur_policy;
+		if (cpufreq_parse_governor(target_gov, &new_policy.policy,
+				&new_policy.governor)) {
+			ret = -EINVAL;
+			goto err_out;
+		}
+
+		if (lock_policy_rwsem_write(cur_policy->cpu) < 0) {
+			ret = -EINVAL;
+			goto err_out;
+		}
+
+		ret = __cpufreq_set_policy(cur_policy, &new_policy);
+
+		cur_policy->user_policy.policy = cur_policy->policy;
+		cur_policy->user_policy.governor = cur_policy->governor;
+
+		unlock_policy_rwsem_write(cur_policy->cpu);
+	}
+err_out:
+	cpufreq_cpu_put(cur_policy);
+	return ret;
+}
+EXPORT_SYMBOL(cpufreq_set_gov);
 
 static int __cpuinit cpufreq_cpu_callback(struct notifier_block *nfb,
 					unsigned long action, void *hcpu)
@@ -2070,9 +2591,36 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
 }
 EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 
+static int cpu_freq_notify(struct notifier_block *b,
+			   unsigned long l, void *v);
+
+static struct notifier_block min_freq_notifier = {
+	.notifier_call = cpu_freq_notify,
+};
+static struct notifier_block max_freq_notifier = {
+	.notifier_call = cpu_freq_notify,
+};
+
+static int cpu_freq_notify(struct notifier_block *b,
+			   unsigned long l, void *v)
+{
+	int cpu;
+	pr_debug("PM QoS %s %lu\n",
+		b == &min_freq_notifier ? "min" : "max", l);
+	for_each_online_cpu(cpu) {
+		struct cpufreq_policy *policy = cpufreq_cpu_get(cpu);
+		if (policy) {
+			cpufreq_update_policy(policy->cpu);
+			cpufreq_cpu_put(policy);
+		}
+	}
+	return NOTIFY_OK;
+}
+
 static int __init cpufreq_core_init(void)
 {
 	int cpu;
+	int rc;
 
 	if (cpufreq_disabled())
 		return -ENODEV;
@@ -2091,6 +2639,16 @@ static int __init cpufreq_core_init(void)
 	cpufreq_global_kobject->kset = cpufreq_kset;
 
 	register_syscore_ops(&cpufreq_syscore_ops);
+	rc = pm_qos_add_notifier(PM_QOS_CPU_FREQ_MIN,
+				 &min_freq_notifier);
+	BUG_ON(rc);
+	rc = pm_qos_add_notifier(PM_QOS_CPU_FREQ_MAX,
+				 &max_freq_notifier);
+	BUG_ON(rc);
+
+#ifdef CONFIG_MULTI_CPU_POLICY_LIMIT
+	rc = sysfs_create_group(cpufreq_global_kobject, &all_cpus_attr_group);
+#endif	/* CONFIG_MULTI_CPU_POLICY_LIMIT */
 
 	return 0;
 }
