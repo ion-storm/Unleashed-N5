@@ -52,6 +52,9 @@ zImage-dtb
 /out/*.zip
 /arch/arm/mach-msm/smd_rpc_sym.c
 /arch/arm/crypto/aesbs-core.S
+Anykernel/zImage
+Anykernel/kernel/zImage*
+out2/ramdisk.lz4
 
 #
 # Debian directory (make deb-pkg)
