@@ -3,24 +3,24 @@ bb=busybox
 echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 
 # Disable mpdecision & thermald & logcat
-	stop thermald
-	stop mpdecision
-	echo 1 > /sys/module/msm_thermal/parameters/enabled
-	echo "[defcon] thermald & mpdecision disabled" | tee /dev/kmsg
-	echo "[defcon] Intelli-Thermal Enabled!" | tee /dev/kmsg
+	#stop thermald
+	#stop mpdecision
+	#echo 1 > /sys/module/msm_thermal/parameters/enabled
+	#echo "[defcon] thermald & mpdecision disabled" | tee /dev/kmsg
+	#echo "[defcon] Intelli-Thermal Enabled!" | tee /dev/kmsg
 
 # Set default hotplug here:
-	echo 0 > /sys/module/autosmp/parameters/enabled
-	echo 0 > /sys/module/dyn_hotplug/parameters/enabled
-	echo 0 > /sys/module/msm_hotplug/enabled
-	echo 1 > /sys/kernel/intelli_plug/intelli_plug_active
-	echo "[defcon] hotplug options set!" | tee /dev/kmsg
+	#echo 0 > /sys/module/autosmp/parameters/enabled
+	#echo 0 > /sys/module/dyn_hotplug/parameters/enabled
+	#echo 0 > /sys/module/msm_hotplug/enabled
+	#echo 1 > /sys/kernel/intelli_plug/intelli_plug_active
+	#echo "[defcon] hotplug options set!" | tee /dev/kmsg
 
 # CPU Boost Driver settings:
-	echo "40" > /sys/module/cpu_boost/parameters/input_boost_ms
-	echo "918000" > /sys/module/cpu_boost/parameters/input_boost_freq
-	echo "[defcon] input boost enabled!" | tee /dev/kmsg
-	echo 0 > /sys/module/cpu_boost/parameters/hotplug_boost
+	#echo "40" > /sys/module/cpu_boost/parameters/input_boost_ms
+	#echo "918000" > /sys/module/cpu_boost/parameters/input_boost_freq
+	#echo "[defcon] input boost enabled!" | tee /dev/kmsg
+	#echo 0 > /sys/module/cpu_boost/parameters/hotplug_boost
 
 
 # Neobuddy Intelliplug options
@@ -77,29 +77,29 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	#echo "[defcon] HYPER CPU Governor activated" | tee /dev/kmsg
 
 # Ultra Samepage Merging settings low, medium, full, or quiet can be set.
-	echo "medium" > /sys/kernel/mm/uksm/cpu_governor
+	#echo "medium" > /sys/kernel/mm/uksm/cpu_governor
 
 
 # Set Power Save Settings
-	echo 1 > /sys/module/pm_8x60/modes/cpu0/wfi/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu2/power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu3/power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/suspend_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu0/retention/idle_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu1/retention/idle_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu2/retention/idle_enabled
-	echo 1 > /sys/module/pm_8x60/modes/cpu3/retention/idle_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu0/wfi/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu2/power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu3/power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/suspend_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu0/retention/idle_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu1/retention/idle_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu2/retention/idle_enabled
+	#echo 1 > /sys/module/pm_8x60/modes/cpu3/retention/idle_enabled
 	#echo 1 > /sys/module/rpm_resources/enable_low_power/L2_cache
 	#echo 1 > /sys/module/rpm_resources/enable_low_power/pxo
 	#echo 1 > /sys/module/rpm_resources/enable_low_power/vdd_dig
 	#echo 1 > /sys/module/rpm_resources/enable_low_power/vdd_mem
-	echo 1 > /dev/cpuctl/apps/cpu.notify_on_migrate
-	echo "[defcon] Power saving modes Enabled" | tee /dev/kmsg
+	#echo 1 > /dev/cpuctl/apps/cpu.notify_on_migrate
+	#echo "[defcon] Power saving modes Enabled" | tee /dev/kmsg
 
 # Set IOSched
 	echo "fiops" > /sys/block/mmcblk0/queue/scheduler
@@ -114,21 +114,6 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	#echo "73" > /sys/module/sweep2wake/parameters/up_kcal
 	#echo "[defcon] sweep2dim enabled!" | tee /dev/kmsg
 
-# disable sysctl.conf to prevent ROM interference with tunables
-	$bb mount -o rw,remount /system
-	$bb [ -e /system/etc/sysctl.conf ] && $bb mv -f /system/etc/sysctl.conf /system/etc/sysctl.conf.fkbak
-
-# create and set permissions for /system/etc/init.d if it doesn't already exist
-	$bb mkdir /system/etc/init.d;
-	$bb chown -R root.root /system/etc/init.d;
-	$bb chmod -R 775 /system/etc/init.d;
-	$bb mount -o ro,remount /system;
-	echo "[defcon] init.d permissions set" | tee /dev/kmsg
-
-# Set permissions for Lowmemorykiller not having the right persmissions with some roms
-	$bb chown -R root.root /sys/module/lowmemorykiller/parameters;
-	$bb chmod -R 775 /sys/module/lowmemorykiller/parameters;
-	echo "[defcon] LMK permissions set" | tee /dev/kmsg
 
 # Interactive Options
 	#echo 20000 1300000:40000 1400000:20000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
@@ -138,14 +123,6 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	#echo "400000000" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk
 	#echo "interactive" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/pwrscale/trustzone/governor
 	#echo "[defcon] GPU Settings Set" | tee /dev/kmsg
-
-# disable debugging on some modules
-	echo "0" > /sys/module/kernel/parameters/initcall_debug;
-	echo "0" > /sys/module/alarm/parameters/debug_mask;
-	echo "0" > /sys/module/alarm_dev/parameters/debug_mask;
-	echo "0" > /sys/module/binder/parameters/debug_mask;
-	echo "0" > /sys/module/xt_qtaguid/parameters/debug_mask;
-	echo "[defcon] Misc Debugging disabled" | tee /dev/kmsg
 
 # VM Tweaks
 	#echo "4096" > /proc/sys/vm/min_free_kbytes;
