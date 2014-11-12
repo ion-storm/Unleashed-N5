@@ -320,7 +320,7 @@ static int cpufreq_governor_darkness(struct cpufreq_policy *policy,
 			delay -= jiffies % delay;
 		}
 
-		INIT_DEFERRABLE_WORK(&this_darkness_cpuinfo->work, do_darkness_timer);
+		INIT_DELAYED_WORK_DEFERRABLE(&this_darkness_cpuinfo->work, do_darkness_timer);
 		queue_delayed_work_on(this_darkness_cpuinfo->cpu, darkness_wq, &this_darkness_cpuinfo->work, delay);
 
 		break;
