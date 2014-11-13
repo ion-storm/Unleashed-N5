@@ -1,5 +1,6 @@
 #!/sbin/sh
-
+# old powerhal not needed
+rm -f /system/lib/hw/power.msm8974.so
 # clean init.d scripts
 INITD_DIR=/system/etc/init.d
 # Trinity
