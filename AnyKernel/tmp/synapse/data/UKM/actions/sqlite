@@ -1,0 +1,13 @@
+UKM=/data/UKM;
+BB=$UKM/busybox;
+SQL3=$UKM/sqlite3;
+
+DB=/data/data/com.android.providers.settings/databases;
+
+if [[ ! -z $2 ]]; then
+	cd $DB;
+	$SQL3 settings.db "INSERT INTO global VALUES(null, 'preferred_network_mode', $2);";
+fi;
+
+cd $DB;
+$BB echo `$SQL3 settings.db "SELECT value FROM global WHERE name = 'preferred_network_mode';"`;
