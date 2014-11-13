@@ -1,6 +1,8 @@
 #!/sbin/sh
 # old powerhal not needed
 rm -f /system/lib/hw/power.msm8974.so
+rm -rf /system/bin/thermald
+rm -rf /system/bin/mpdecision
 # clean init.d scripts
 INITD_DIR=/system/etc/init.d
 # Trinity
