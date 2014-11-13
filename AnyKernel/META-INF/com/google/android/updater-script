@@ -1,6 +1,7 @@
 ui_print("AnyKernel Installer");
 ui_print("defcon Ultimate Kernel...");
 ui_print("Preparing installation...");
+getprop("ro.product.device") == "hammerhead" || abort("This package is for \"hammerhead\" devices; this is a \"" + getprop("ro.product.device") + "\".");
 package_extract_dir("tmp", "/tmp/");
 package_extract_dir("kernel", "/tmp/kernel");
 set_perm(0, 0, 0775, "/tmp/dump_image.sh");
