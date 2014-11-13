@@ -31,8 +31,6 @@ ui_print("Installing Busybox & symlinking Busybox Applets...");
 run_program("/tmp/busybox", "cp", "-f", "/tmp/busybox", "/system/xbin/busybox");
 set_perm(0, 2000, 0775, "/system/xbin/busybox");
 run_program("/tmp/bb.sh");
-set_perm(0, 0, 0775, "/system/etc/install-recovery-2.sh");
-set_perm_recursive(0, 0, 0755, 0644, "/system/lib/modules");
 set_metadata("/system/etc/audio_policy.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 run_program("/tmp/busybox", "unmount", "/system");
 ui_print("Done!");

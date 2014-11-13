@@ -3,8 +3,10 @@ bb=busybox
 echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 
 # Disable mpdecision & thermald & logcat
-	#stop thermald
-	#stop mpdecision
+	stop thermald
+	stop mpdecision
+	#stop dmesg spam
+	rm -f /system/lib/hw/power.msm8974.so
 	#echo 1 > /sys/module/msm_thermal/parameters/enabled
 	#echo "[defcon] thermald & mpdecision disabled" | tee /dev/kmsg
 	#echo "[defcon] Intelli-Thermal Enabled!" | tee /dev/kmsg
