@@ -1095,14 +1095,11 @@ static ssize_t f2fs_direct_IO(int rw, struct kiocb *iocb,
 #ifdef CONFIG_AIO_OPTIMIZATION
 		struct iov_iter *iter, loff_t offset)
 #else
-  		const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+		const struct iovec *iov, loff_t offset, unsigned long nr_segs)
 #endif
 {
 	struct file *file = iocb->ki_filp;
-	struct address_space *mapping = file->f_mapping;
-	struct inode *inode = mapping->host;
-	size_t count = iov_length(iov, nr_segs);
-	int err;
+	struct inode *inode = file->f_mapping->host;
 
 	/* Let buffer I/O handle the inline data case. */
 	if (f2fs_has_inline_data(inode))
@@ -1112,16 +1109,16 @@ static ssize_t f2fs_direct_IO(int rw, struct kiocb *iocb,
 	if (check_direct_IO(inode, rw, iter, offset))
 		return 0;
 #else
-  	if (check_direct_IO(inode, rw, iov, offset, nr_segs))
-  		return 0;
+	if (check_direct_IO(inode, rw, iov, offset, nr_segs))
+		return 0;
 #endif
 
 #ifdef CONFIG_AIO_OPTIMIZATION
 	return blockdev_direct_IO(rw, iocb, inode, iter, offset,
 					get_data_block);
 #else
-  	return blockdev_direct_IO(rw, iocb, inode, iov, offset, nr_segs,
-  							get_data_block);
+	return blockdev_direct_IO(rw, iocb, inode, iov, offset, nr_segs,
+							get_data_block);
 #endif
 }
 
