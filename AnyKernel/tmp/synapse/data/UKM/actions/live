@@ -3,6 +3,59 @@ BB=$UKM/busybox;
 DEVICE=`sh $UKM/device/.device.sh`;
 
 case $1 in
+	MAXMINFreq)
+		FREQMAX="$(expr `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq` / 1000)MHz"
+		FREQMIN="$(expr `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq` / 1000)MHz"
+		echo Max Freq: $FREQMAX@nMin Freq: $FREQMIN
+	;;
+	KSMStats)
+		KSM="$(expr `cat /sys/kernel/mm/ksm/run`)"
+		if [ KSM -eq "1" ]; then
+			SAVEDMEM=`echo "Saved memory: $((\`cat /sys/kernel/mm/ksm/pages_sharing\`*4096/1024/1024)) MB"`
+			SHARDMEM=`echo "Shared memory: $((\`cat /sys/kernel/mm/ksm/pages_shared\`*4096/1024/1024)) MB"`
+			echo $SAVEDMEM@n$SHARDMEM
+		else
+			echo KSM is Disabled.
+		fi
+	;;
+	PVSbin)
+		if [ -e /sys/module/clock_krait_8974/parameters/table_name ]; then
+			PVS="$(expr `cat /sys/module/clock_krait_8974/parameters/table_name`)"
+			echo $PVS
+		elif [ -e /sys/module/acpuclock_krait/parameters/pvs_number ]; then
+			PVS="$(expr `cat /sys/module/acpuclock_krait/parameters/pvs_number`)"
+			echo $PVS
+		else
+			echo PVS bin not found.
+		fi
+	;;
+	CURFreq)
+		FREQONE=Offline
+		FREQTWO=Offline
+		FREQTHREE=Offline
+		FREQFOUR=Offline
+		if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq ]; then
+			if [ $(expr `cat /sys/devices/system/cpu/cpu0/online`) -eq "1" ]; then
+				FREQONE="$(expr `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq` / 1000)MHz"
+			fi
+		fi
+		if [ -e /sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq ]; then
+			if [ $(expr `cat /sys/devices/system/cpu/cpu1/online`) -eq "1" ]; then
+				FREQTWO="$(expr `cat /sys/devices/system/cpu/cpu1/cpufreq/scaling_cur_freq` / 1000)MHz"
+			fi
+		fi
+		if [ -e /sys/devices/system/cpu/cpu2/cpufreq/scaling_cur_freq ]; then
+			if [ $(expr `cat /sys/devices/system/cpu/cpu2/online`) -eq "1" ]; then
+				FREQTHREE="$(expr `cat /sys/devices/system/cpu/cpu2/cpufreq/scaling_cur_freq` / 1000)MHz"
+			fi
+		fi
+		if [ -e /sys/devices/system/cpu/cpu3/cpufreq/scaling_cur_freq ]; then
+			if [ $(expr `cat /sys/devices/system/cpu/cpu3/online`) -eq "1" ]; then
+				FREQFOUR="$(expr `cat /sys/devices/system/cpu/cpu3/cpufreq/scaling_cur_freq` / 1000)MHz"
+			fi
+		fi
+		echo Core 1: $FREQONE@nCore 2: $FREQTWO@nCore 3: $FREQTHREE@nCore 4: $FREQFOUR 
+	;;
 	BatteryTemperature)
 		$BB echo `sh $DEVICE LiveBatteryTemperature`;
 	;;

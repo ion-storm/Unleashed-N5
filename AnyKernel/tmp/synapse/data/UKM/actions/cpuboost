@@ -1,0 +1,8 @@
+BB=/system/xbin/busybox;
+
+if [[ ! -z $1 ]]; then
+	$BB echo $1 > /sys/module/cpu_boost/parameters/input_boost_freq;
+	$BB echo $1 > /data/UKM/files/input_boost_freq;
+fi
+
+echo `cat /data/UKM/files/input_boost_freq`
