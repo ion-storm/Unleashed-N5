@@ -2,41 +2,11 @@ cat << CTAG
 {
     name:THERMAL,
 		elements:[
-			{ SPane:{
-				title:"Info"
-			}},
-				{ SDescription:{
-					description:"Use only one thermal driver from the following options, using more than at the same time may cause unexpected behavior."
-				}},
-			`if [ -f "/system/bin/thermald" ]; then
-			THERMALD=\`ps | $BB grep thermald\`
-				if [ -n "$THERMALD" ]; then THERMALD=1; else THERMALD=0; fi
-				$BB echo '{ SPane:{
-					title:"Thermald"
-				}},
-					{ SCheckBox:{
-						label:"Enable",
-						description:"Stock Qualcomm thermal driver that prevents device from overheating. This should be disabled if current kernel has an alternative.",
-						default:'$THERMALD',
-						action:"serviceset thermald"
-					}},'
-			fi`
+
 			`[ -d "/sys/module/msm_thermal" ] && MSMTHERMAL=/sys/module/msm_thermal;
 			[ -d "/sys/module/msm_thermal_v2" ] && MSMTHERMAL=/sys/module/msm_thermal_v2;
 			
 			if [ -d "$MSMTHERMAL/parameters" ]; then
-				if [ -f "$MSMTHERMAL/parameters/enabled" ] && [ -f "$MSMTHERMAL/parameters/core_limit_temp_degC" ]; then
-				THERMAL=\`bool $MSMTHERMAL/parameters/enabled\`;
-					$BB echo '{ SPane:{
-						title:"Intellithermal"
-					}},
-						{ SCheckBox:{
-							label:"Enable",
-							description:"An in kernel replacement for Qualcomms Thermald. Developed by faux123.",
-							default:'$THERMAL',
-							action:"boolean '$MSMTHERMAL'/parameters/enabled"
-						}},'
-				fi
 				if [ -f "$MSMTHERMAL/parameters/intelli_enabled" ]; then
 				INTELLIE=\`bool $MSMTHERMAL/parameters/intelli_enabled\`;
 					$BB echo '{ SPane:{
@@ -44,42 +14,18 @@ cat << CTAG
 					}},
 						{ SCheckBox:{
 							label:"Enable",
-							description:"An in kernel replacement for Qualcomms Thermald. Developed by faux123 & alucard_24.",
+							description:"An in-kernel replacement for Qualcomms Thermal Engine.",
 							default:'$INTELLIE',
 							action:"boolean '$MSMTHERMAL'/parameters/intelli_enabled"
 						}},'
 				fi
-				if [ -f "$MSMTHERMAL/parameters/thermal_debug_mode" ]; then
-				DEBUG=\`cat $MSMTHERMAL/parameters/thermal_debug_mode\`
-					echo '{ SCheckBox:{
-							label:"Debug Mask",
-							description:"Allows you to activate debug mask for thermal operations.",
-							default:'$DEBUG',
-							action:"generic '$MSMTHERMAL'/parameters/thermal_debug_mode"
-					}},'
-				fi
-				if [ -f "$MSMTHERMAL/core_control/enabled" ]; then
-				ECC=\`$BB cat $MSMTHERMAL/core_control/enabled\`;
-					$BB echo '{ SCheckBox:{
-						label:"Enable Core Control",
-						default:'$ECC',
-						action:"generic '$MSMTHERMAL'/core_control/enabled"
-					}},'
-				fi
-				if [ -f "$MSMTHERMAL/core_control/core_control" ]; then
-				CC=\`$BB cat $MSMTHERMAL/core_control/core_control\`;
+				if [ -f "$MSMTHERMAL/core_control/enabled_0" ]; then
+				CC=\`$BB cat $MSMTHERMAL/core_control/enabled\`;
 					$BB echo '{ SCheckBox:{
 						label:"Core Control",
+						description:"When core control is enabled, CPU sibling cores will shut down at high temperature which may impact performance and conflict hotplug driver; when core control is disabled, CPU sibling cores will operate at lower frequencies at high temperature and will give good balance between device temperature control and performance.",
 						default:'$CC',
-						action:"generic '$MSMTHERMAL'/core_control/core_control"
-					}},'
-				fi
-				if [ -f "$MSMTHERMAL/vdd_restriction/enabled" ]; then
-				CC=\`$BB cat $MSMTHERMAL/vdd_restriction/enabled\`;
-					$BB echo '{ SCheckBox:{
-						label:"VDD Restriction",
-						default:'$CC',
-						action:"generic '$MSMTHERMAL'/vdd_restriction/enabled"
+						action:"generic '$MSMTHERMAL'/core_control/enabled"
 					}},'
 				fi
 				if [ -f "$MSMTHERMAL/parameters/limit_temp_degC" ]; then
@@ -103,17 +49,17 @@ cat << CTAG
 						unit:"ºC",
 						step:1,
 						min:50,
-						max:100,
+						max:110,
 						default:'$TEMP',
 						action:"generic '$MSMTHERMAL'/parameters/core_limit_temp_degC"
 					}},'
 				fi
-				if [ -f "$MSMTHERMAL/parameters/freq_control_mask" ]; then
+				if [ -f "$MSMTHERMAL/parameters/freq_control_mask_0" ]; then
 					$BB echo '{ SDescription:{
 						description:"Frequency Throttling Cores:"
 					}},
 					{ SDescription:{
-						description:"Cores to throttle frequency when temperature limit is reached."
+						description:"Cores to throttle frequency when temperature limit is reached. We recommend all cores except Core 0 should be frequency-throttled."
 					}}
 					{ SCheckBox:{
 						label:"Core 0",
@@ -132,12 +78,12 @@ cat << CTAG
 						action:"intellithermal freq core3"
 					}},'
 				fi
-				if [ -f "$MSMTHERMAL/parameters/core_control_mask" ]; then
+				if [ -f "$MSMTHERMAL/parameters/core_control_mask_0" ]; then
 					$BB echo '{ SDescription:{
 						description:"Core Throttling Cores:"
 					}},
 					{ SDescription:{
-						description:"Cores to shutdown when temperature limit is reached."
+						description:"Cores to shutdown when temperature limit is reached. These controls are ineffective if core-control is disabled."
 					}}
 					{ SCheckBox:{
 						label:"Core 1",
@@ -212,7 +158,7 @@ cat << CTAG
 					$BB echo '{ SSeekBar:{
 						title:"Thermal Limit Low",
 						step:1,
-						min:1,
+						min:0,
 						max:30,
 						default:'$TLL',
 						action:"generic '$MSMTHERMAL'/parameters/thermal_limit_low"
@@ -227,14 +173,6 @@ cat << CTAG
 						max:30,
 						default:'$TLH',
 						action:"generic '$MSMTHERMAL'/parameters/thermal_limit_high"
-					}},'
-				fi
-				if [ -f "$MSMTHERMAL/parameters/temp_safety" ]; then
-				TS=\`$BB cat $MSMTHERMAL/parameters/temp_safety\`;
-					$BB echo '{ SCheckBox:{
-						label:"Temperature Safety",
-						default:'$TS',
-						action:"generic '$MSMTHERMAL'/parameters/temp_safety"
 					}},'
 				fi
 			fi`
