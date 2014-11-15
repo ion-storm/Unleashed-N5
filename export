@@ -12,9 +12,9 @@ else
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
-version="v2u-unleashed"
+version="v3u-unleashed"
 rom="AOSP"
-variant="hh"
+variant="N5"
 ramdisk=ramdisk
 #ramdisk=/home/defcon/Desktop/newboot/ramdisk
 config="hammerhead_defconfig"
