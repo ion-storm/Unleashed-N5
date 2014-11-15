@@ -77,7 +77,7 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	#echo "[defcon] HYPER CPU Governor activated" | tee /dev/kmsg
 
 # Ultra Samepage Merging settings low, medium, full, or quiet can be set.
-	#echo "medium" > /sys/kernel/mm/uksm/cpu_governor
+	echo "medium" > /sys/kernel/mm/uksm/cpu_governor
 
 
 # Set Power Save Settings
