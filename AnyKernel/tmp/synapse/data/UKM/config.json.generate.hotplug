@@ -145,15 +145,6 @@ cat << CTAG
 						}
 					}},'
 				fi
-				if [ -f "/sys/kernel/intelli_plug/hotplug_suspend" ]; then
-				HS=\`$BB cat /sys/kernel/intelli_plug/hotplug_suspend\`;
-					$BB echo '{ SCheckBox:{
-						label:"Hotplug Suspend",
-						description:"Allow the hotplug governor to not suspend.",
-						default:'$HS',
-						action:"generic /sys/kernel/intelli_plug/hotplug_suspend"
-					}},'
-				fi
 				if [ -f "/sys/kernel/intelli_plug/cpus_boosted" ]; then
 				CPUBOOST=\`$BB cat /sys/kernel/intelli_plug/cpus_boosted\`;
 					$BB echo '{ SSeekBar:{
