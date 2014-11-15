@@ -24,12 +24,12 @@
 #include <linux/iommu.h>
 #include <linux/io.h>
 #include <linux/vmalloc.h>
+#include <linux/sizes.h>
 
 #include <asm/memory.h>
 #include <asm/highmem.h>
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
-#include <asm/sizes.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/system_info.h>
@@ -1153,6 +1153,13 @@ static void *arm_iommu_alloc_attrs(struct device *dev, size_t size,
 	pgprot_t prot = __get_dma_pgprot(attrs, pgprot_kernel);
 	struct page **pages;
 	void *addr = NULL;
+
+	/* Following is a work-around (a.k.a. hack) to prevent pages
+	 * with __GFP_COMP being passed to split_page() which cannot
+	 * handle them.  The real problem is that this flag probably
+	 * should be 0 on ARM as it is not supported on this
+	 * platform--see CONFIG_HUGETLB_PAGE. */
+	gfp &= ~(__GFP_COMP);
 
 	*handle = DMA_ERROR_CODE;
 	size = PAGE_ALIGN(size);

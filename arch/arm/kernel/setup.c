@@ -55,12 +55,12 @@
 #include <asm/traps.h>
 #include <asm/unwind.h>
 #include <asm/memblock.h>
+#include <asm/virt.h>
 
 #if defined(CONFIG_DEPRECATED_PARAM_STRUCT)
 #include "compat.h"
 #endif
 #include "atags.h"
-#include "tcm.h"
 
 #ifndef MEM_SIZE
 #define MEM_SIZE	(16*1024*1024)
@@ -931,6 +931,23 @@ static int __init meminfo_cmp(const void *_a, const void *_b)
 	return cmp < 0 ? -1 : cmp > 0 ? 1 : 0;
 }
 
+void __init hyp_mode_check(void)
+{
+#ifdef CONFIG_ARM_VIRT_EXT
+	sync_boot_mode();
+
+	if (is_hyp_mode_available()) {
+		pr_info("CPU: All CPU(s) started in HYP mode.\n");
+		pr_info("CPU: Virtualization extensions available.\n");
+	} else if (is_hyp_mode_mismatched()) {
+		pr_warn("CPU: WARNING: CPU(s) started in wrong/inconsistent modes (primary CPU mode 0x%x)\n",
+			__boot_cpu_mode & MODE_MASK);
+		pr_warn("CPU: This may indicate a broken bootloader or firmware.\n");
+	} else
+		pr_info("CPU: All CPU(s) started in SVC mode.\n");
+#endif
+}
+
 void __init setup_arch(char **cmdline_p)
 {
 	struct machine_desc *mdesc;
@@ -979,9 +996,11 @@ void __init setup_arch(char **cmdline_p)
 		smp_init_cpus();
 	}
 #endif
-	reserve_crashkernel();
 
-	tcm_init();
+	if (!is_smp())
+		hyp_mode_check();
+
+	reserve_crashkernel();
 
 #ifdef CONFIG_MULTI_IRQ_HANDLER
 	handle_arch_irq = mdesc->handle_irq;

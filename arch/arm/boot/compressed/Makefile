@@ -37,6 +37,10 @@ DECOMPRESS = decompress.o
 OBJS		+= string.o
 CFLAGS_string.o	:= -Os
 
+ifeq ($(CONFIG_ARM_VIRT_EXT),y)
+OBJS		+= hyp-stub.o
+endif
+
 #
 # Architecture dependencies
 #
@@ -133,6 +137,7 @@ KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
 ccflags-y := -fpic -fno-builtin -I$(obj)
+asflags-y := -Wa,-march=all -DZIMAGE
 
 # Supply kernel BSS size to the decompressor via a linker symbol.
 KBSS_SZ = $(shell $(CROSS_COMPILE)size $(obj)/../../../../vmlinux | \
@@ -207,3 +212,6 @@ $(obj)/font.c: $(FONTC)
 
 $(obj)/vmlinux.lds: $(obj)/vmlinux.lds.in arch/arm/boot/Makefile $(KCONFIG_CONFIG)
 	@sed "$(SEDFLAGS)" < $< > $@
+
+$(obj)/hyp-stub.S: $(srctree)/arch/$(SRCARCH)/kernel/hyp-stub.S
+	$(call cmd,shipped)
