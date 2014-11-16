@@ -1,5 +1,4 @@
-UKM=/data/UKM;
-BB=$UKM/busybox;
+BB=/system/xbin/busybox;
 
 case "$1" in
 	queue)

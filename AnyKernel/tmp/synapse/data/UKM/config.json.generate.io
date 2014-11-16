@@ -18,7 +18,7 @@ cat << CTAG
 				{ SOptionList:{
 					title:"I/O Scheduler",
 					description:"The I/O Scheduler decides how to prioritize and handle I/O requests. More info: <a href='http://timos.me/tm/wiki/ioscheduler'>HERE</a>",
-					default:`$BB echo $($UKM/actions/bracket-option \`sh $DEVICE DirIOScheduler\`)`,
+					default:`$BB echo $(/data/UKM/actions/bracket-option \`sh $DEVICE DirIOScheduler\`)`,
 					action:"ioset scheduler",
 					values:[
 						`sh $DEVICE IOSchedulerList`

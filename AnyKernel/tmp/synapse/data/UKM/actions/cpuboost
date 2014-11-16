@@ -1,8 +1,47 @@
 BB=/system/xbin/busybox;
 
-if [[ ! -z $1 ]]; then
-	$BB echo $1 > /sys/module/cpu_boost/parameters/input_boost_freq;
-	$BB echo $1 > /data/UKM/files/input_boost_freq;
-fi
+cpuwrite() {
+	INP0=`cat /data/UKM/files/input_boost_freq_0`;
+	INP1=`cat /data/UKM/files/input_boost_freq_1`;
+	INP2=`cat /data/UKM/files/input_boost_freq_2`;
+	INP3=`cat /data/UKM/files/input_boost_freq_3`;
 
-echo `cat /data/UKM/files/input_boost_freq`
+	$BB echo "0:$INP0 1:$INP1 2:$INP2 3:$INP3" > $P 2> /dev/null;
+}
+
+P=/sys/module/cpu_boost/parameters/input_boost_freq;
+		
+if [ -f $P ]; then
+	if [[ ! -z $2 ]]; then
+		case $1 in
+			0)
+				$BB echo $2 > /data/UKM/files/input_boost_freq_0;
+			;;
+			1)
+				$BB echo $2 > /data/UKM/files/input_boost_freq_1;
+			;;
+			2)
+				$BB echo $2 > /data/UKM/files/input_boost_freq_2;
+			;;
+			3)
+				$BB echo $2 > /data/UKM/files/input_boost_freq_3;
+			;;
+		esac;
+		cpuwrite;
+	fi;
+
+	case $1 in
+		0)
+			echo `cat /data/UKM/files/input_boost_freq_0`
+		;;
+		1)
+			echo `cat /data/UKM/files/input_boost_freq_1`
+		;;
+		2)
+			echo `cat /data/UKM/files/input_boost_freq_2`
+		;;
+		3)
+			echo `cat /data/UKM/files/input_boost_freq_3`
+		;;
+	esac;
+fi;

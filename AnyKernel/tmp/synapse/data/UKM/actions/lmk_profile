@@ -1,4 +1,4 @@
-BB=/sbin/busybox;
+BB=/system/xbin/busybox;
 
 Low(){
 	MINFREE="1536,2048,2560,8192,16384,20480";
