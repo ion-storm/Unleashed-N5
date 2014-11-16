@@ -1,5 +1,5 @@
 #!/system/bin/sh
-bb=busybox
+bb=/system/xbin/busybox
 echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 
 # Disable mpdecision & thermald & logcat
@@ -22,6 +22,9 @@ echo "[defcon] Welcome to Ultimate Kernel Series" | tee /dev/kmsg
 	#echo "[defcon] input boost enabled!" | tee /dev/kmsg
 	#echo 0 > /sys/module/cpu_boost/parameters/hotplug_boost
 
+# Tweak Lowmemorykiller settings
+$bb echo "1536,2048,4096,16384,28672,32768" > /sys/module/lowmemorykiller/parameters/minfree
+$bb echo 32 > /sys/module/lowmemorykiller/parameters/cost
 
 # Neobuddy Intelliplug options
 # profile selections for full_mode_profile
