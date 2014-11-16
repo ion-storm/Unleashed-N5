@@ -275,10 +275,10 @@ on post-fs-data
     write /sys/devices/system/cpu/cpufreq/bacon/max_freq_hysteresis 100000
     write /sys/devices/system/cpu/cpufreq/bacon/timer_slack 30000
 
-    write /sys/module/cpu_boost/parameters/boost_ms 60
+    write /sys/module/cpu_boost/parameters/boost_ms 20
     write /sys/module/cpu_boost/parameters/sync_threshold 1728000
     write /sys/module/cpu_boost/parameters/input_boost_freq 1497600
-    write /sys/module/cpu_boost/parameters/input_boost_ms 90
+    write /sys/module/cpu_boost/parameters/input_boost_ms 500
     write /sys/module/cpu_boost/parameters/load_based_syncs 1
     write /dev/cpuctl/apps/cpu.notify_on_migrate 1
 
@@ -564,9 +564,3 @@ service time_daemon /system/bin/time_daemon
     user root
     group root
 
-service postinit /sbin/post-init.sh
-    class main
-    user root
-    group root system
-    disabled
-    seclabel u:r:shell:s0
