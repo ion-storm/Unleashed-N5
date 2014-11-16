@@ -12,7 +12,7 @@ else
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
-version="v3u-unleashed"
+version="v5u-unleashed"
 rom="AOSP"
 variant="N5"
 ramdisk=ramdisk
