@@ -1,5 +1,4 @@
-UKM=/data/UKM;
-BB=$UKM/busybox;
+BB=/system/xbin/busybox;
 
 SWAP=/dev/block/zram0;
 RESET=/sys/devices/virtual/block/zram0/reset;

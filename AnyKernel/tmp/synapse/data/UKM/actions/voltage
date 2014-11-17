@@ -1,5 +1,4 @@
-UKM=/data/UKM;
-BB=$UKM/busybox;
+BB=/system/xbin/busybox;
 
 cpuread() {
 	while read FREQ UVOLT UNIT; do
@@ -51,7 +50,7 @@ corewrite() {
 
 case $1 in
 	cpuvoltglobal)
-		VOLT_PROF=$UKM/files/volt_prof;
+		VOLT_PROF=/data/UKM/files/volt_prof;
 		P=/sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table;
 		
 		if [ -f $P ]; then
@@ -95,3 +94,4 @@ case $1 in
 	fi;
 	;;
 esac;
+
