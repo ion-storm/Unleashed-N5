@@ -72,12 +72,12 @@ static struct hotplug_tuners {
 #ifdef CONFIG_MACH_JF
 	.hotplug_enable = 1,
 #else
-	.hotplug_enable = 0,
+	.hotplug_enable = 1,
 #endif
 	.min_cpus_online = 1,
 	.maxcoreslimit = NR_CPUS,
 	.maxcoreslimit_sleep = 1,
-	.hp_io_is_busy = 0,
+	.hp_io_is_busy = 1,
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
 	.hotplug_suspend = 1,
