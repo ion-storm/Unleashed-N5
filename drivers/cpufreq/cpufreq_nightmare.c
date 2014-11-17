@@ -12,7 +12,7 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- * 
+ *
  * Created by Alucard_24@xda
  */
 
@@ -35,17 +35,6 @@
  */
 
 static void do_nightmare_timer(struct work_struct *work);
-static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
-				unsigned int event);
-
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_NIGHTMARE
-static
-#endif
-struct cpufreq_governor cpufreq_gov_nightmare = {
-	.name                   = "nightmare",
-	.governor               = cpufreq_governor_nightmare,
-	.owner                  = THIS_MODULE,
-};
 
 struct cpufreq_nightmare_cpuinfo {
 	u64 prev_cpu_wall;
@@ -53,8 +42,11 @@ struct cpufreq_nightmare_cpuinfo {
 	struct cpufreq_frequency_table *freq_table;
 	struct delayed_work work;
 	struct cpufreq_policy *cur_policy;
+#if 0
+	ktime_t time_stamp;
+#endif
 	int cpu;
-	unsigned int enable:1;
+	bool governor_enabled;
 	/*
 	 * mutex that serializes governor limit change with
 	 * do_nightmare_timer invocation. We do not want do_nightmare_timer to run
@@ -71,36 +63,38 @@ static unsigned int nightmare_enable;	/* number of CPUs using this policy */
  */
 static DEFINE_MUTEX(nightmare_mutex);
 
-/*static atomic_t min_freq_limit[NR_CPUS];
-static atomic_t max_freq_limit[NR_CPUS];*/
+static struct workqueue_struct *nightmare_wq;
 
 /* nightmare tuners */
 static struct nightmare_tuners {
-	atomic_t sampling_rate;
-	atomic_t inc_cpu_load_at_min_freq;
-	atomic_t inc_cpu_load;
-	atomic_t dec_cpu_load;
-	atomic_t freq_for_responsiveness;
-	atomic_t freq_for_responsiveness_max;
-	atomic_t freq_up_brake_at_min_freq;
-	atomic_t freq_up_brake;
-	atomic_t freq_step_at_min_freq;
-	atomic_t freq_step;
-	atomic_t freq_step_dec;
-	atomic_t freq_step_dec_at_max_freq;
+	unsigned int sampling_rate;
+	int inc_cpu_load_at_min_freq;
+	int inc_cpu_load;
+	int dec_cpu_load;
+	int freq_for_responsiveness;
+	int freq_for_responsiveness_max;
+	int freq_up_brake_at_min_freq;
+	int freq_up_brake;
+	int freq_step_at_min_freq;
+	int freq_step;
+	int freq_step_dec;
+	int freq_step_dec_at_max_freq;
+	unsigned int io_is_busy;
+
 } nightmare_tuners_ins = {
-	.sampling_rate = ATOMIC_INIT(40000),
-	.inc_cpu_load_at_min_freq = ATOMIC_INIT(40),
-	.inc_cpu_load = ATOMIC_INIT(70),
-	.dec_cpu_load = ATOMIC_INIT(50),
-	.freq_for_responsiveness = ATOMIC_INIT(1958400),
-	.freq_for_responsiveness_max = ATOMIC_INIT(2496000),
-	.freq_step_at_min_freq = ATOMIC_INIT(40),
-	.freq_step = ATOMIC_INIT(40),
-	.freq_up_brake_at_min_freq = ATOMIC_INIT(30),
-	.freq_up_brake = ATOMIC_INIT(30),
-	.freq_step_dec = ATOMIC_INIT(10),
-	.freq_step_dec_at_max_freq = ATOMIC_INIT(10),
+	.sampling_rate = 60000,
+	.inc_cpu_load_at_min_freq = 40,
+	.inc_cpu_load = 70,
+	.dec_cpu_load = 50,
+	.freq_for_responsiveness = 1958400,
+	.freq_for_responsiveness_max = 2496000,
+	.freq_step_at_min_freq = 40,
+	.freq_step = 40,
+	.freq_up_brake_at_min_freq = 30,
+	.freq_up_brake = 30,
+	.freq_step_dec = 10,
+	.freq_step_dec_at_max_freq = 10,
+	.io_is_busy = 0,
 };
 
 /************************** sysfs interface ************************/
@@ -110,7 +104,7 @@ static struct nightmare_tuners {
 static ssize_t show_##file_name						\
 (struct kobject *kobj, struct attribute *attr, char *buf)		\
 {									\
-	return sprintf(buf, "%d\n", atomic_read(&nightmare_tuners_ins.object));		\
+	return sprintf(buf, "%d\n", nightmare_tuners_ins.object);		\
 }
 show_one(sampling_rate, sampling_rate);
 show_one(inc_cpu_load_at_min_freq, inc_cpu_load_at_min_freq);
@@ -124,126 +118,7 @@ show_one(freq_up_brake_at_min_freq, freq_up_brake_at_min_freq);
 show_one(freq_up_brake, freq_up_brake);
 show_one(freq_step_dec, freq_step_dec);
 show_one(freq_step_dec_at_max_freq, freq_step_dec_at_max_freq);
-
-/*#define show_freqlimit_param(file_name, cpu)		\
-static ssize_t show_##file_name##_##cpu		\
-(struct kobject *kobj, struct attribute *attr, char *buf)		\
-{									\
-	return sprintf(buf, "%d\n", atomic_read(&file_name[cpu]));	\
-}
-
-#define store_freqlimit_param(file_name, cpu)		\
-static ssize_t store_##file_name##_##cpu		\
-(struct kobject *kobj, struct attribute *attr,				\
-	const char *buf, size_t count)					\
-{									\
-	unsigned int input;						\
-	int ret;							\
-	ret = sscanf(buf, "%d", &input);				\
-	if (ret != 1)							\
-		return -EINVAL;						\
-	if (input == atomic_read(&file_name[cpu])) {		\
-		return count;	\
-	}	\
-	atomic_set(&file_name[cpu], input);			\
-	return count;							\
-}*/
-
-/* min freq limit for awaking */
-/*show_freqlimit_param(min_freq_limit, 0);
-show_freqlimit_param(min_freq_limit, 1);
-#if NR_CPUS >= 4
-show_freqlimit_param(min_freq_limit, 2);
-show_freqlimit_param(min_freq_limit, 3);
-#endif*/
-/* max freq limit for awaking */
-/*show_freqlimit_param(max_freq_limit, 0);
-show_freqlimit_param(max_freq_limit, 1);
-#if NR_CPUS >= 4
-show_freqlimit_param(max_freq_limit, 2);
-show_freqlimit_param(max_freq_limit, 3);
-#endif*/
-/* min freq limit for awaking */
-/*store_freqlimit_param(min_freq_limit, 0);
-store_freqlimit_param(min_freq_limit, 1);
-#if NR_CPUS >= 4
-store_freqlimit_param(min_freq_limit, 2);
-store_freqlimit_param(min_freq_limit, 3);
-#endif*/
-/* max freq limit for awaking */
-/*store_freqlimit_param(max_freq_limit, 0);
-store_freqlimit_param(max_freq_limit, 1);
-#if NR_CPUS >= 4
-store_freqlimit_param(max_freq_limit, 2);
-store_freqlimit_param(max_freq_limit, 3);
-#endif
-define_one_global_rw(min_freq_limit_0);
-define_one_global_rw(min_freq_limit_1);
-#if NR_CPUS >= 4
-define_one_global_rw(min_freq_limit_2);
-define_one_global_rw(min_freq_limit_3);
-#endif
-define_one_global_rw(max_freq_limit_0);
-define_one_global_rw(max_freq_limit_1);
-#if NR_CPUS >= 4
-define_one_global_rw(max_freq_limit_2);
-define_one_global_rw(max_freq_limit_3);
-#endif*/
-
-/**
- * update_sampling_rate - update sampling rate effective immediately if needed.
- * @new_rate: new sampling rate
- *
- * If new rate is smaller than the old, simply updaing
- * nightmare_tuners_ins.sampling_rate might not be appropriate. For example,
- * if the original sampling_rate was 1 second and the requested new sampling
- * rate is 10 ms because the user needs immediate reaction from ondemand
- * governor, but not sure if higher frequency will be required or not,
- * then, the governor may change the sampling rate too late; up to 1 second
- * later. Thus, if we are reducing the sampling rate, we need to make the
- * new value effective immediately.
- */
-static void update_sampling_rate(unsigned int new_rate)
-{
-	int cpu;
-
-	atomic_set(&nightmare_tuners_ins.sampling_rate,new_rate);
-
-	get_online_cpus();
-	for_each_online_cpu(cpu) {
-		struct cpufreq_policy *policy;
-		struct cpufreq_nightmare_cpuinfo *nightmare_cpuinfo;
-		unsigned long next_sampling, appointed_at;
-
-		policy = cpufreq_cpu_get(cpu);
-		if (!policy)
-			continue;
-		nightmare_cpuinfo = &per_cpu(od_nightmare_cpuinfo, policy->cpu);
-		cpufreq_cpu_put(policy);
-
-		mutex_lock(&nightmare_cpuinfo->timer_mutex);
-
-		if (!delayed_work_pending(&nightmare_cpuinfo->work)) {
-			mutex_unlock(&nightmare_cpuinfo->timer_mutex);
-			continue;
-		}
-
-		next_sampling  = jiffies + usecs_to_jiffies(new_rate);
-		appointed_at = nightmare_cpuinfo->work.timer.expires;
-
-
-		if (time_before(next_sampling, appointed_at)) {
-
-			mutex_unlock(&nightmare_cpuinfo->timer_mutex);
-			cancel_delayed_work_sync(&nightmare_cpuinfo->work);
-			mutex_lock(&nightmare_cpuinfo->timer_mutex);
-
-			queue_delayed_work_on(nightmare_cpuinfo->cpu, system_wq, &nightmare_cpuinfo->work, usecs_to_jiffies(new_rate));
-		}
-		mutex_unlock(&nightmare_cpuinfo->timer_mutex);
-	}
-	put_online_cpus();
-}
+show_one(io_is_busy, io_is_busy);
 
 /* sampling_rate */
 static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
@@ -252,16 +127,16 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 	int input;
 	int ret;
 
-	ret = sscanf(buf, "%d", &input);
+	ret = sscanf(buf, "%u", &input);
 	if (ret != 1)
 		return -EINVAL;
 
 	input = max(input,10000);
-	
-	if (input == atomic_read(&nightmare_tuners_ins.sampling_rate))
+
+	if (input == nightmare_tuners_ins.sampling_rate)
 		return count;
 
-	update_sampling_rate(input);
+	nightmare_tuners_ins.sampling_rate = input;
 
 	return count;
 }
@@ -278,12 +153,12 @@ static ssize_t store_inc_cpu_load_at_min_freq(struct kobject *a, struct attribut
 		return -EINVAL;
 	}
 
-	input = min(input,atomic_read(&nightmare_tuners_ins.inc_cpu_load));
+	input = min(input,nightmare_tuners_ins.inc_cpu_load);
 
-	if (input == atomic_read(&nightmare_tuners_ins.inc_cpu_load_at_min_freq))
+	if (input == nightmare_tuners_ins.inc_cpu_load_at_min_freq)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.inc_cpu_load_at_min_freq,input);
+	nightmare_tuners_ins.inc_cpu_load_at_min_freq = input;
 
 	return count;
 }
@@ -301,10 +176,10 @@ static ssize_t store_inc_cpu_load(struct kobject *a, struct attribute *b,
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.inc_cpu_load))
+	if (input == nightmare_tuners_ins.inc_cpu_load)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.inc_cpu_load,input);
+	nightmare_tuners_ins.inc_cpu_load = input;
 
 	return count;
 }
@@ -322,10 +197,10 @@ static ssize_t store_dec_cpu_load(struct kobject *a, struct attribute *b,
 
 	input = max(min(input,95),5);
 
-	if (input == atomic_read(&nightmare_tuners_ins.dec_cpu_load))
+	if (input == nightmare_tuners_ins.dec_cpu_load)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.dec_cpu_load,input);
+	nightmare_tuners_ins.dec_cpu_load = input;
 
 	return count;
 }
@@ -341,10 +216,10 @@ static ssize_t store_freq_for_responsiveness(struct kobject *a, struct attribute
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_for_responsiveness))
+	if (input == nightmare_tuners_ins.freq_for_responsiveness)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.freq_for_responsiveness,input);
+	nightmare_tuners_ins.freq_for_responsiveness = input;
 
 	return count;
 }
@@ -360,10 +235,10 @@ static ssize_t store_freq_for_responsiveness_max(struct kobject *a, struct attri
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_for_responsiveness_max))
+	if (input == nightmare_tuners_ins.freq_for_responsiveness_max)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.freq_for_responsiveness_max,input);
+	nightmare_tuners_ins.freq_for_responsiveness_max = input;
 
 	return count;
 }
@@ -381,10 +256,10 @@ static ssize_t store_freq_step_at_min_freq(struct kobject *a, struct attribute *
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_step_at_min_freq))
+	if (input == nightmare_tuners_ins.freq_step_at_min_freq)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.freq_step_at_min_freq,input);
+	nightmare_tuners_ins.freq_step_at_min_freq = input;
 
 	return count;
 }
@@ -402,10 +277,10 @@ static ssize_t store_freq_step(struct kobject *a, struct attribute *b,
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_step))
+	if (input == nightmare_tuners_ins.freq_step)
 		return count;
 
-	atomic_set(&nightmare_tuners_ins.freq_step,input);
+	nightmare_tuners_ins.freq_step = input;
 
 	return count;
 }
@@ -423,11 +298,11 @@ static ssize_t store_freq_up_brake_at_min_freq(struct kobject *a, struct attribu
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_up_brake_at_min_freq)) {/* nothing to do */
+	if (input == nightmare_tuners_ins.freq_up_brake_at_min_freq) {/* nothing to do */
 		return count;
 	}
 
-	atomic_set(&nightmare_tuners_ins.freq_up_brake_at_min_freq,input);
+	nightmare_tuners_ins.freq_up_brake_at_min_freq = input;
 
 	return count;
 }
@@ -445,11 +320,11 @@ static ssize_t store_freq_up_brake(struct kobject *a, struct attribute *b,
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_up_brake)) {/* nothing to do */
+	if (input == nightmare_tuners_ins.freq_up_brake) {/* nothing to do */
 		return count;
 	}
 
-	atomic_set(&nightmare_tuners_ins.freq_up_brake,input);
+	nightmare_tuners_ins.freq_up_brake = input;
 
 	return count;
 }
@@ -467,11 +342,11 @@ static ssize_t store_freq_step_dec(struct kobject *a, struct attribute *b,
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_step_dec)) {/* nothing to do */
+	if (input == nightmare_tuners_ins.freq_step_dec) {/* nothing to do */
 		return count;
 	}
 
-	atomic_set(&nightmare_tuners_ins.freq_step_dec,input);
+	nightmare_tuners_ins.freq_step_dec = input;
 
 	return count;
 }
@@ -489,12 +364,43 @@ static ssize_t store_freq_step_dec_at_max_freq(struct kobject *a, struct attribu
 
 	input = max(min(input,100),0);
 
-	if (input == atomic_read(&nightmare_tuners_ins.freq_step_dec_at_max_freq)) {/* nothing to do */
+	if (input == nightmare_tuners_ins.freq_step_dec_at_max_freq) {/* nothing to do */
 		return count;
 	}
 
-	atomic_set(&nightmare_tuners_ins.freq_step_dec_at_max_freq,input);
+	nightmare_tuners_ins.freq_step_dec_at_max_freq = input;
 
+	return count;
+}
+
+/* io_is_busy */
+static ssize_t store_io_is_busy(struct kobject *a, struct attribute *b,
+				   const char *buf, size_t count)
+{
+	unsigned int input, j;
+	int ret;
+
+	ret = sscanf(buf, "%u", &input);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (input > 1)
+		input = 1;
+
+	if (input == nightmare_tuners_ins.io_is_busy)
+		return count;
+
+	nightmare_tuners_ins.io_is_busy = !!input;
+
+	/* we need to re-evaluate prev_cpu_idle */
+	for_each_online_cpu(j) {
+		struct cpufreq_nightmare_cpuinfo *j_nightmare_cpuinfo;
+
+		j_nightmare_cpuinfo = &per_cpu(od_nightmare_cpuinfo, j);
+
+		j_nightmare_cpuinfo->prev_cpu_idle = get_cpu_idle_time(j,
+			&j_nightmare_cpuinfo->prev_cpu_wall, nightmare_tuners_ins.io_is_busy);
+	}
 	return count;
 }
 
@@ -510,21 +416,10 @@ define_one_global_rw(freq_up_brake_at_min_freq);
 define_one_global_rw(freq_up_brake);
 define_one_global_rw(freq_step_dec);
 define_one_global_rw(freq_step_dec_at_max_freq);
+define_one_global_rw(io_is_busy);
 
 static struct attribute *nightmare_attributes[] = {
 	&sampling_rate.attr,
-	/*&min_freq_limit_0.attr,
-	&min_freq_limit_1.attr,
-#if NR_CPUS >= 4
-	&min_freq_limit_2.attr,
-	&min_freq_limit_3.attr,
-#endif
-	&max_freq_limit_0.attr,
-	&max_freq_limit_1.attr,
-#if NR_CPUS >= 4
-	&max_freq_limit_2.attr,
-	&max_freq_limit_3.attr,
-#endif*/
 	&inc_cpu_load_at_min_freq.attr,
 	&inc_cpu_load.attr,
 	&dec_cpu_load.attr,
@@ -536,6 +431,7 @@ static struct attribute *nightmare_attributes[] = {
 	&freq_up_brake.attr,
 	&freq_step_dec.attr,
 	&freq_step_dec_at_max_freq.attr,
+	&io_is_busy.attr,
 	NULL
 };
 
@@ -546,18 +442,36 @@ static struct attribute_group nightmare_attr_group = {
 
 /************************** sysfs end ************************/
 
+#if 0
+/* Will return if we need to evaluate cpu load again or not */
+static inline bool need_load_eval(struct cpufreq_nightmare_cpuinfo *this_nightmare_cpuinfo,
+		unsigned int sampling_rate)
+{
+	ktime_t time_now = ktime_get();
+	s64 delta_us = ktime_us_delta(time_now, this_nightmare_cpuinfo->time_stamp);
+
+	/* Do nothing if we recently have sampled */
+	if (delta_us < (s64)(sampling_rate / 2))
+		return false;
+	else
+		this_nightmare_cpuinfo->time_stamp = time_now;
+
+	return true;
+}
+#endif
+
 static void nightmare_check_cpu(struct cpufreq_nightmare_cpuinfo *this_nightmare_cpuinfo)
 {
 	struct cpufreq_policy *cpu_policy;
 	unsigned int min_freq;
 	unsigned int max_freq;
-	unsigned int freq_for_responsiveness;
-	unsigned int freq_for_responsiveness_max;
-	int dec_cpu_load;
-	int inc_cpu_load;
-	int freq_step;
-	int freq_up_brake;
-	int freq_step_dec;
+	unsigned int freq_for_responsiveness = nightmare_tuners_ins.freq_for_responsiveness;
+	unsigned int freq_for_responsiveness_max = nightmare_tuners_ins.freq_for_responsiveness_max;
+	int dec_cpu_load = nightmare_tuners_ins.dec_cpu_load;
+	int inc_cpu_load = nightmare_tuners_ins.inc_cpu_load;
+	int freq_step = nightmare_tuners_ins.freq_step;
+	int freq_up_brake = nightmare_tuners_ins.freq_up_brake;
+	int freq_step_dec = nightmare_tuners_ins.freq_step_dec;
 	u64 cur_wall_time, cur_idle_time;
 	unsigned int wall_time, idle_time;
 	unsigned int index = 0;
@@ -565,12 +479,14 @@ static void nightmare_check_cpu(struct cpufreq_nightmare_cpuinfo *this_nightmare
 	unsigned int next_freq = 0;
 	int cur_load = -1;
 	unsigned int cpu;
+	int io_busy = nightmare_tuners_ins.io_is_busy;
 
 	cpu = this_nightmare_cpuinfo->cpu;
 	cpu_policy = this_nightmare_cpuinfo->cur_policy;
+	if (cpu_policy == NULL)
+		return;
 
-	cur_idle_time = get_cpu_idle_time_us(cpu, NULL);
-	cur_idle_time += get_cpu_iowait_time_us(cpu, &cur_wall_time);
+	cur_idle_time = get_cpu_idle_time(cpu, &cur_wall_time, io_busy);
 
 	wall_time = (unsigned int)
 			(cur_wall_time - this_nightmare_cpuinfo->prev_cpu_wall);
@@ -580,53 +496,37 @@ static void nightmare_check_cpu(struct cpufreq_nightmare_cpuinfo *this_nightmare
 			(cur_idle_time - this_nightmare_cpuinfo->prev_cpu_idle);
 	this_nightmare_cpuinfo->prev_cpu_idle = cur_idle_time;
 
-	/*min_freq = atomic_read(&min_freq_limit[cpu]);
-	max_freq = atomic_read(&max_freq_limit[cpu]);*/
-
-	freq_for_responsiveness = atomic_read(&nightmare_tuners_ins.freq_for_responsiveness);
-	freq_for_responsiveness_max = atomic_read(&nightmare_tuners_ins.freq_for_responsiveness_max);
-	dec_cpu_load = atomic_read(&nightmare_tuners_ins.dec_cpu_load);
-	inc_cpu_load = atomic_read(&nightmare_tuners_ins.inc_cpu_load);
-	freq_step = atomic_read(&nightmare_tuners_ins.freq_step);
-	freq_up_brake = atomic_read(&nightmare_tuners_ins.freq_up_brake);
-	freq_step_dec = atomic_read(&nightmare_tuners_ins.freq_step_dec);
-
-	if (!cpu_policy || cpu_policy == NULL)
-		return;
-
 	/*printk(KERN_ERR "TIMER CPU[%u], wall[%u], idle[%u]\n",cpu, wall_time, idle_time);*/
 	if (wall_time >= idle_time) { /*if wall_time < idle_time, evaluate cpu load next time*/
 		cur_load = wall_time > idle_time ? (100 * (wall_time - idle_time)) / wall_time : 1;/*if wall_time is equal to idle_time cpu_load is equal to 1*/
+
+		cpufreq_notify_utilization(cpu_policy, cur_load);
+
 		/* Checking Frequency Limit */
-		/*if (max_freq > cpu_policy->max)
-			max_freq = cpu_policy->max;
-		if (min_freq < cpu_policy->min)
-			min_freq = cpu_policy->min;*/
 		min_freq = cpu_policy->min;
-		max_freq = cpu_policy->max;		
+		max_freq = cpu_policy->max;
 		/* CPUs Online Scale Frequency*/
 		if (cpu_policy->cur < freq_for_responsiveness) {
-			inc_cpu_load = atomic_read(&nightmare_tuners_ins.inc_cpu_load_at_min_freq);
-			freq_step = atomic_read(&nightmare_tuners_ins.freq_step_at_min_freq);
-			freq_up_brake = atomic_read(&nightmare_tuners_ins.freq_up_brake_at_min_freq);
+			inc_cpu_load = nightmare_tuners_ins.inc_cpu_load_at_min_freq;
+			freq_step = nightmare_tuners_ins.freq_step_at_min_freq;
+			freq_up_brake = nightmare_tuners_ins.freq_up_brake_at_min_freq;
 		} else if (cpu_policy->cur > freq_for_responsiveness_max) {
-			freq_step_dec = atomic_read(&nightmare_tuners_ins.freq_step_dec_at_max_freq);
-		}		
+			freq_step_dec = nightmare_tuners_ins.freq_step_dec_at_max_freq;
+		}
 		/* Check for frequency increase or for frequency decrease */
 		if (cur_load >= inc_cpu_load && cpu_policy->cur < max_freq) {
 			tmp_freq = max(min((cpu_policy->cur + ((cur_load + freq_step - freq_up_brake == 0 ? 1 : cur_load + freq_step - freq_up_brake) * 3780)), max_freq), min_freq);
 		} else if (cur_load < dec_cpu_load && cpu_policy->cur > min_freq) {
 			tmp_freq = max(min((cpu_policy->cur - ((100 - cur_load + freq_step_dec == 0 ? 1 : 100 - cur_load + freq_step_dec) * 3780)), max_freq), min_freq);
 		} else {
-			/* if cpu frequency is already at maximum or minimum or cur_load is between inc_cpu_load and dec_cpu_load var, we don't need to set frequency!
-			return; */
-			tmp_freq = cpu_policy->cur;
+			/* if cpu frequency is already at maximum or minimum or cur_load is between inc_cpu_load and dec_cpu_load var, we don't need to set frequency! */
+			return;
 		}
 		cpufreq_frequency_table_target(cpu_policy, this_nightmare_cpuinfo->freq_table, tmp_freq,
 			CPUFREQ_RELATION_L, &index);
-	 	next_freq = this_nightmare_cpuinfo->freq_table[index].frequency;
+		next_freq = this_nightmare_cpuinfo->freq_table[index].frequency;
 		/*printk(KERN_ERR "FREQ CALC.: CPU[%u], load[%d], target freq[%u], cur freq[%u], min freq[%u], max_freq[%u]\n",cpu, cur_load, next_freq, cpu_policy->cur, cpu_policy->min, max_freq);*/
-		if (next_freq != cpu_policy->cur && cpu_online(cpu)) {
+		if (next_freq != cpu_policy->cur) {
 			__cpufreq_driver_target(cpu_policy, next_freq, CPUFREQ_RELATION_L);
 		}
 	}
@@ -636,6 +536,7 @@ static void nightmare_check_cpu(struct cpufreq_nightmare_cpuinfo *this_nightmare
 static void do_nightmare_timer(struct work_struct *work)
 {
 	struct cpufreq_nightmare_cpuinfo *nightmare_cpuinfo;
+	unsigned int sampling_rate;
 	int delay;
 	unsigned int cpu;
 
@@ -643,16 +544,22 @@ static void do_nightmare_timer(struct work_struct *work)
 	cpu = nightmare_cpuinfo->cpu;
 
 	mutex_lock(&nightmare_cpuinfo->timer_mutex);
-	nightmare_check_cpu(nightmare_cpuinfo);
+
+	sampling_rate = nightmare_tuners_ins.sampling_rate;
+	delay = usecs_to_jiffies(sampling_rate);
 	/* We want all CPUs to do sampling nearly on
 	 * same jiffy
 	 */
-	delay = usecs_to_jiffies(atomic_read(&nightmare_tuners_ins.sampling_rate));
 	if (num_online_cpus() > 1) {
 		delay -= jiffies % delay;
 	}
 
-	queue_delayed_work_on(cpu, system_wq, &nightmare_cpuinfo->work, delay);
+#if 0
+	if (need_load_eval(nightmare_cpuinfo, sampling_rate))
+#endif
+		nightmare_check_cpu(nightmare_cpuinfo);
+
+	queue_delayed_work_on(cpu, nightmare_wq, &nightmare_cpuinfo->work, delay);
 	mutex_unlock(&nightmare_cpuinfo->timer_mutex);
 }
 
@@ -662,8 +569,10 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 	unsigned int cpu;
 	struct cpufreq_nightmare_cpuinfo *this_nightmare_cpuinfo;
 	int rc, delay;
+	int io_busy;
 
 	cpu = policy->cpu;
+	io_busy = nightmare_tuners_ins.io_is_busy;
 	this_nightmare_cpuinfo = &per_cpu(od_nightmare_cpuinfo, cpu);
 
 	switch (event) {
@@ -675,13 +584,10 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 
 		this_nightmare_cpuinfo->cur_policy = policy;
 
-		this_nightmare_cpuinfo->prev_cpu_idle = get_cpu_idle_time_us(cpu, NULL);
-		this_nightmare_cpuinfo->prev_cpu_idle += get_cpu_iowait_time_us(cpu, &this_nightmare_cpuinfo->prev_cpu_wall);
+		this_nightmare_cpuinfo->prev_cpu_idle = get_cpu_idle_time(cpu, &this_nightmare_cpuinfo->prev_cpu_wall, io_busy);
 
 		this_nightmare_cpuinfo->freq_table = cpufreq_frequency_get_table(cpu);
 		this_nightmare_cpuinfo->cpu = cpu;
-
-		mutex_init(&this_nightmare_cpuinfo->timer_mutex);
 
 		nightmare_enable++;
 		/*
@@ -692,47 +598,55 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 			rc = sysfs_create_group(cpufreq_global_kobject,
 						&nightmare_attr_group);
 			if (rc) {
+				nightmare_enable--;
 				mutex_unlock(&nightmare_mutex);
 				return rc;
 			}
 		}
-
-		/*if (atomic_read(&min_freq_limit[cpu]) == 0)
-			atomic_set(&min_freq_limit[cpu], policy->min);
-
-		if (atomic_read(&max_freq_limit[cpu]) == 0)
-			atomic_set(&max_freq_limit[cpu], policy->max);*/
-
+		this_nightmare_cpuinfo->governor_enabled = true;
 		mutex_unlock(&nightmare_mutex);
 
-		delay=usecs_to_jiffies(atomic_read(&nightmare_tuners_ins.sampling_rate));
+		mutex_init(&this_nightmare_cpuinfo->timer_mutex);
+
+#if 0
+		/* Initiate timer time stamp */
+		this_nightmare_cpuinfo->time_stamp = ktime_get();
+#endif
+
+		delay=usecs_to_jiffies(nightmare_tuners_ins.sampling_rate);
 		if (num_online_cpus() > 1) {
 			delay -= jiffies % delay;
 		}
 
-		this_nightmare_cpuinfo->enable = 1;
 		INIT_DELAYED_WORK_DEFERRABLE(&this_nightmare_cpuinfo->work, do_nightmare_timer);
-		queue_delayed_work_on(this_nightmare_cpuinfo->cpu, system_wq, &this_nightmare_cpuinfo->work, delay);
+		queue_delayed_work_on(this_nightmare_cpuinfo->cpu, nightmare_wq, &this_nightmare_cpuinfo->work, delay);
 
 		break;
 
 	case CPUFREQ_GOV_STOP:
-		this_nightmare_cpuinfo->enable = 0;
 		cancel_delayed_work_sync(&this_nightmare_cpuinfo->work);
 
 		mutex_lock(&nightmare_mutex);
-		nightmare_enable--;
 		mutex_destroy(&this_nightmare_cpuinfo->timer_mutex);
 
+		this_nightmare_cpuinfo->governor_enabled = false;
+
+		this_nightmare_cpuinfo->cur_policy = NULL;
+
+		nightmare_enable--;
 		if (!nightmare_enable) {
 			sysfs_remove_group(cpufreq_global_kobject,
-					   &nightmare_attr_group);			
+					   &nightmare_attr_group);
 		}
 		mutex_unlock(&nightmare_mutex);
-		
+
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
+		if (!this_nightmare_cpuinfo->cur_policy) {
+			pr_debug("Unable to limit cpu freq due to cur_policy == NULL\n");
+			return -EPERM;
+		}
 		mutex_lock(&this_nightmare_cpuinfo->timer_mutex);
 		if (policy->max < this_nightmare_cpuinfo->cur_policy->cur)
 			__cpufreq_driver_target(this_nightmare_cpuinfo->cur_policy,
@@ -747,13 +661,30 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 	return 0;
 }
 
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_NIGHTMARE
+static
+#endif
+struct cpufreq_governor cpufreq_gov_nightmare = {
+	.name                   = "nightmare",
+	.governor               = cpufreq_governor_nightmare,
+	.owner                  = THIS_MODULE,
+};
+
 static int __init cpufreq_gov_nightmare_init(void)
 {
+	nightmare_wq = alloc_workqueue("nightmare_wq", WQ_HIGHPRI, 0);
+
+	if (!nightmare_wq) {
+		printk(KERN_ERR "Failed to create nightmare workqueue\n");
+		return -EFAULT;
+	}
+
 	return cpufreq_register_governor(&cpufreq_gov_nightmare);
 }
 
 static void __exit cpufreq_gov_nightmare_exit(void)
 {
+	destroy_workqueue(nightmare_wq);
 	cpufreq_unregister_governor(&cpufreq_gov_nightmare);
 }
 
