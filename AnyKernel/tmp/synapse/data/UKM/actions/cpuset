@@ -16,3 +16,4 @@ if [ -f $1 ]; then
 
 	$BB echo `$BB cat $1`;
 fi;
+
