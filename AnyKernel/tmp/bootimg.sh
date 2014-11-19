@@ -68,7 +68,7 @@ cd /tmp/ramdisk/
 find . | cpio -o -H newc | gzip > /tmp/out/boot.img-ramdisk.gz
 cd /
 rm -rf /tmp/ramdisk
-/tmp/mkbootimg --kernel /tmp/kernel/zImage-dtb --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=hammerhead user_debug=31 maxcpus=2 msm_watchdog_v2.enable=1' --base 0x00000000 --pagesize 2048 --ramdisk_offset 0x02900000 --tags_offset 0x02700000 --ramdisk /tmp/out/boot.img-ramdisk.gz --output /tmp/boot.img
+/tmp/mkbootimg --kernel /tmp/kernel/zImage-dtb --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=hammerhead user_debug=31 maxcpus=2 msm_watchdog_v2.enable=1 androidboot.selinux=permissive' --base 0x00000000 --pagesize 2048 --ramdisk_offset 0x02900000 --tags_offset 0x02700000 --ramdisk /tmp/out/boot.img-ramdisk.gz --output /tmp/boot.img
 if [ -e /tmp/boot.img ]; then
 	echo "[AnyKernel] Boot.img created successfully!" | tee /dev/kmsg
 else
