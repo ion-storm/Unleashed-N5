@@ -532,13 +532,13 @@ static int cpu_boost_init(void)
 		return -EFAULT;
 
 	INIT_WORK(&input_boost_work, do_input_boost);
-	INIT_DELAYED_WORK_DEFERRABLE(&input_boost_rem, do_input_boost_rem);
+	INIT_DELAYED_WORK(&input_boost_rem, do_input_boost_rem);
 
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
 		spin_lock_init(&s->lock);
-		INIT_DELAYED_WORK_DEFERRABLE(&s->boost_rem, do_boost_rem);
+		INIT_DELAYED_WORK(&s->boost_rem, do_boost_rem);
 	}
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 	atomic_notifier_chain_register(&migration_notifier_head,
