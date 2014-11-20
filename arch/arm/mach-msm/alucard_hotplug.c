@@ -56,7 +56,7 @@ static struct hotplug_tuners {
 	unsigned int hotplug_enable;
 	unsigned int min_cpus_online;
 	unsigned int maxcoreslimit;
-	unsigned int maxcoreslimit_sleep;
+	unsigned int max_cpus_online_susp;
 	unsigned int hp_io_is_busy;
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
@@ -74,7 +74,7 @@ static struct hotplug_tuners {
 #endif
 	.min_cpus_online = 1,
 	.maxcoreslimit = NR_CPUS,
-	.maxcoreslimit_sleep = 1,
+	.max_cpus_online_susp = 1,
 	.hp_io_is_busy = 1,
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
@@ -182,7 +182,7 @@ static void __ref hotplug_work_fn(struct work_struct *work)
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
 	if (hotplug_tuners_ins.suspended)
-		upmaxcoreslimit = hotplug_tuners_ins.maxcoreslimit_sleep;
+		upmaxcoreslimit = hotplug_tuners_ins.max_cpus_online_susp;
 	else
 #endif
 		upmaxcoreslimit = hotplug_tuners_ins.maxcoreslimit;
@@ -454,7 +454,7 @@ show_one(hotplug_sampling_rate, hotplug_sampling_rate);
 show_one(hotplug_enable, hotplug_enable);
 show_one(min_cpus_online, min_cpus_online);
 show_one(maxcoreslimit, maxcoreslimit);
-show_one(maxcoreslimit_sleep, maxcoreslimit_sleep);
+show_one(max_cpus_online_susp, max_cpus_online_susp);
 show_one(hp_io_is_busy, hp_io_is_busy);
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
@@ -679,8 +679,8 @@ static ssize_t store_maxcoreslimit(struct kobject *a, struct attribute *b,
 	return count;
 }
 
-/* maxcoreslimit_sleep */
-static ssize_t store_maxcoreslimit_sleep(struct kobject *a,
+/* max_cpus_online_susp */
+static ssize_t store_max_cpus_online_susp(struct kobject *a,
 				struct attribute *b,
 				const char *buf, size_t count)
 {
@@ -693,10 +693,10 @@ static ssize_t store_maxcoreslimit_sleep(struct kobject *a,
 
 	input = max(input > NR_CPUS ? NR_CPUS : input, 1);
 
-	if (hotplug_tuners_ins.maxcoreslimit_sleep == input)
+	if (hotplug_tuners_ins.max_cpus_online_susp == input)
 		return count;
 
-	hotplug_tuners_ins.maxcoreslimit_sleep = input;
+	hotplug_tuners_ins.max_cpus_online_susp = input;
 
 	return count;
 }
@@ -770,7 +770,7 @@ define_one_global_rw(hotplug_sampling_rate);
 define_one_global_rw(hotplug_enable);
 define_one_global_rw(min_cpus_online);
 define_one_global_rw(maxcoreslimit);
-define_one_global_rw(maxcoreslimit_sleep);
+define_one_global_rw(max_cpus_online_susp);
 define_one_global_rw(hp_io_is_busy);
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
@@ -806,7 +806,7 @@ static struct attribute *alucard_hotplug_attributes[] = {
 	&hotplug_rate_4_0.attr,
 	&min_cpus_online.attr,
 	&maxcoreslimit.attr,
-	&maxcoreslimit_sleep.attr,
+	&max_cpus_online_susp.attr,
 	&hp_io_is_busy.attr,
 #if defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
