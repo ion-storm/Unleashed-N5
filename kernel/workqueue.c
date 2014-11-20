@@ -589,10 +589,7 @@ static struct pool_workqueue *get_work_pwq(struct work_struct *work)
 	if (data & WORK_STRUCT_PWQ)
 		return (void *)(data & WORK_STRUCT_WQ_DATA_MASK);
 	else
-	{
-		WARN_ON_ONCE(1);
 		return NULL;
-	}
 }
 
 /**
@@ -2196,7 +2193,6 @@ __acquires(&pool->lock)
 		       current->comm, preempt_count(), task_pid_nr(current),
 		       worker->current_func);
 		debug_show_held_locks(current);
-		BUG_ON(PANIC_CORRUPTION);
 		dump_stack();
 	}
 
