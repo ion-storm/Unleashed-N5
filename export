@@ -113,7 +113,9 @@ fi
 echo "Making ramdisk..."
 if [ -d $ramdisk ]; then
 	#./utilities/mkbootfs $ramdisk | /media/Extra/porting/buildtools/lz4demo -c stdin tmp/ramdisk.lz4
-	./utilities/mkbootfs $ramdisk | gzip > ./tmp/ramdisk.gz
+	cp -rf $ramdisk/ tmp/
+	rm -rf tmp/hammerhead_ramdisk/.git
+	./utilities/mkbootfs tmp/hammerhead_ramdisk | gzip > ./tmp/ramdisk.gz
 else
 	echo "No ramdisk found..."
 	exit 0;
@@ -134,12 +136,21 @@ if [ -f arch/arm/boot/"$kerneltype" ]; then
 	mv ../"$kernel"-$version-"$rom"_"$variant".zip $build
 	cd ..
 	echo "cleaning up..."
-	rm -rf ./tmp/*
+	#rm -rf ./tmp/*
 	rm -f out/boot.img
 	rm -f arch/arm/boot/"$kerneltype"
 	echo "Done..."
 	echo "Output zip: $build/$kernel-$version-"$rom"_$variant.zip"
-	exit 0;
+read -p "Push to device (y/n)? : " cchoice
+	case "$cchoice" in
+		y|Y )
+			adb push $build/$kernel-$version-"$rom"_$variant.zip /sdcard/;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+	
 else
 	echo "No $kerneltype found..."
 	exit 0;
