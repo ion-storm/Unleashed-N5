@@ -286,7 +286,7 @@ static void run_boost_migration(unsigned int cpu)
 		cpufreq_update_policy(src_cpu);
 	if (cpu_online(dest_cpu)) {
 		cpufreq_update_policy(dest_cpu);
-		queue_delayed_work_on(dest_cpu, cpu_boost_wq,
+		mod_delayed_work_on(dest_cpu, cpu_boost_wq,
 			&s->boost_rem, msecs_to_jiffies(boost_ms));
 	} else {
 		s->boost_min = 0;
@@ -376,7 +376,7 @@ static void do_input_boost(struct work_struct *work)
 	/* Update policies for all online CPUs */
 	update_policy_online();
 
-	queue_delayed_work(cpu_boost_wq, &input_boost_rem,
+	mod_delayed_work(cpu_boost_wq, &input_boost_rem,
 					msecs_to_jiffies(input_boost_ms));
 }
 
@@ -532,13 +532,13 @@ static int cpu_boost_init(void)
 		return -EFAULT;
 
 	INIT_WORK(&input_boost_work, do_input_boost);
-	INIT_DELAYED_WORK(&input_boost_rem, do_input_boost_rem);
+	INIT_DELAYED_WORK_DEFERRABLE(&input_boost_rem, do_input_boost_rem);
 
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
 		spin_lock_init(&s->lock);
-		INIT_DELAYED_WORK(&s->boost_rem, do_boost_rem);
+		INIT_DELAYED_WORK_DEFERRABLE(&s->boost_rem, do_boost_rem);
 	}
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 	atomic_notifier_chain_register(&migration_notifier_head,

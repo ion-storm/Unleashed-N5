@@ -185,7 +185,7 @@ static void apply_down_lock(unsigned int cpu)
 	struct down_lock *dl = &per_cpu(lock_info, cpu);
 
 	dl->locked = 1;
-	queue_delayed_work_on(0, intelliplug_wq, &dl->lock_rem,
+	mod_delayed_work_on(0, intelliplug_wq, &dl->lock_rem,
 			      msecs_to_jiffies(down_lock_dur));
 }
 
@@ -305,7 +305,7 @@ static void intelli_plug_work_fn(struct work_struct *work)
 	queue_work_on(0, intelliplug_wq, &up_down_work);
 
 	if (atomic_read(&intelli_plug_active) == 1)
-		queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+		mod_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
 					msecs_to_jiffies(def_sampling_ms));
 }
 
@@ -344,7 +344,7 @@ static void __ref intelli_plug_resume(struct work_struct *work)
 		required_wakeup = 1;
 		/* Initiate hotplug work if it was cancelled */
 		required_reschedule = 1;
-		INIT_DELAYED_WORK(&intelli_plug_work,
+		INIT_DELAYED_WORK_DEFERRABLE(&intelli_plug_work,
 				intelli_plug_work_fn);
 		dprintk("%s: resumed.\n", INTELLI_PLUG);
 	}
@@ -362,7 +362,7 @@ static void __ref intelli_plug_resume(struct work_struct *work)
 
 	/* Resume hotplug workqueue if required */
 	if (required_reschedule)
-		queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+		mod_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
 				      msecs_to_jiffies(RESUME_SAMPLING_MS));
 }
 
@@ -380,8 +380,8 @@ static void __intelli_plug_suspend(struct early_suspend *handler)
 	if (!hotplug_suspend)
 		return;
 
-	INIT_DELAYED_WORK(&suspend_work, intelli_plug_suspend);
-	queue_delayed_work_on(0, susp_wq, &suspend_work,
+	INIT_DELAYED_WORK_DEFERRABLE(&suspend_work, intelli_plug_suspend);
+	mod_delayed_work_on(0, susp_wq, &suspend_work,
 				 msecs_to_jiffies(suspend_defer_time * 1000));
 }
 
@@ -598,15 +598,15 @@ static int __ref intelli_plug_start(void)
 #endif
 
 	INIT_WORK(&up_down_work, cpu_up_down_work);
-	INIT_DELAYED_WORK(&intelli_plug_work, intelli_plug_work_fn);
+	INIT_DELAYED_WORK_DEFERRABLE(&intelli_plug_work, intelli_plug_work_fn);
 	for_each_possible_cpu(cpu) {
 		dl = &per_cpu(lock_info, cpu);
-		INIT_DELAYED_WORK(&dl->lock_rem, remove_down_lock);
+		INIT_DELAYED_WORK_DEFERRABLE(&dl->lock_rem, remove_down_lock);
 	}
 #if defined(CONFIG_LCD_NOTIFY) || \
 	defined(CONFIG_POWERSUSPEND) || \
 	defined(CONFIG_HAS_EARLYSUSPEND)
-	INIT_DELAYED_WORK(&suspend_work, intelli_plug_suspend);
+	INIT_DELAYED_WORK_DEFERRABLE(&suspend_work, intelli_plug_suspend);
 	INIT_WORK(&resume_work, intelli_plug_resume);
 #endif
 
@@ -618,7 +618,7 @@ static int __ref intelli_plug_start(void)
 		apply_down_lock(cpu);
 	}
 
-	queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
+	mod_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
 			      START_DELAY_MS);
 
 	return ret;
