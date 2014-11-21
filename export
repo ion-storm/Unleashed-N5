@@ -9,7 +9,7 @@ if [ "$1" == "local" ]; then
 else
 	echo "Remote Build"
 	build=/home/defcon/downloads/
-	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/aarm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.10/bin/arm-cortex_a15-linux-gnueabihf-
+	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.10/bin/arm-cortex_a15-linux-gnueabihf-
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
@@ -30,6 +30,7 @@ function cleanme {
 	fi
 	rm -rf out/boot.img
 	rm -rf arch/arm/boot/"$kerneltype"
+	rm -rf ./tmp/*
 	mkdir -p ozip/system/lib/modules
 	make clean && make mrproper
 	echo "Working directory cleaned..."
@@ -115,7 +116,7 @@ if [ -d $ramdisk ]; then
 	#./utilities/mkbootfs $ramdisk | /media/Extra/porting/buildtools/lz4demo -c stdin tmp/ramdisk.lz4
 	cp -rf $ramdisk/ tmp/
 	rm -rf tmp/hammerhead_ramdisk/.git
-	./utilities/mkbootfs tmp/hammerhead_ramdisk | gzip > ./tmp/ramdisk.gz
+	/media/Extra/porting/buildtools/mkbootfs tmp/hammerhead_ramdisk | gzip > ./tmp/ramdisk.gz
 else
 	echo "No ramdisk found..."
 	exit 0;
@@ -123,7 +124,7 @@ fi
 
 echo "Making boot.img..."
 if [ -f tmp/"$kerneltype" ]; then
-	./utilities/mkbootimg --kernel ./tmp/zImage-dtb --cmdline "$cmdline" --base 0x00000000 --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --ramdisk ./tmp/ramdisk.gz --output out/boot.img
+	/media/Extra/porting/buildtools/mkbootimg --kernel ./tmp/zImage-dtb --cmdline "$cmdline" --base 0x00000000 --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --ramdisk ./tmp/ramdisk.gz --output out/boot.img
 else
 	echo "No $kerneltype found..."
 	exit 0;
@@ -139,6 +140,7 @@ if [ -f arch/arm/boot/"$kerneltype" ]; then
 	#rm -rf ./tmp/*
 	rm -f out/boot.img
 	rm -f arch/arm/boot/"$kerneltype"
+	rm -rf ./tmp/*
 	echo "Done..."
 	echo "Output zip: $build/$kernel-$version-"$rom"_$variant.zip"
 read -p "Push to device (y/n)? : " cchoice
