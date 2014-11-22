@@ -52,8 +52,8 @@
 #endif
 
 /* Pump Inc/Dec for all cores */
-#define PUMP_INC_STEP_AT_MIN_FREQ	6
-#define PUMP_INC_STEP			1
+#define PUMP_INC_STEP_AT_MIN_FREQ	2
+#define PUMP_INC_STEP			2
 #define PUMP_DEC_STEP			1
 
 static void do_alucard_timer(struct work_struct *work);
