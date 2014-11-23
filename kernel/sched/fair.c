@@ -3123,7 +3123,7 @@ static struct task_struct *pick_next_task_fair(struct rq *rq)
 	cfs_rq = &rq->cfs;
 #endif
 
-	if (!cfs_rq->h_nr_running)
+	if (!cfs_rq->nr_running)
 		return NULL;
 
 	do {
