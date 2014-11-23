@@ -56,7 +56,7 @@ Anykernel/zImage
 Anykernel/kernel/zImage*
 out2/ramdisk.lz4
 Anykernel/kernel/zImage-dtb
-
+Changelog*
 #
 # Debian directory (make deb-pkg)
 #
