@@ -27,7 +27,6 @@
 #include <linux/cpumask.h>
 #include <linux/sched.h>
 #include <linux/suspend.h>
-#include <trace/events/power.h>
 #include <mach/socinfo.h>
 #include <mach/cpufreq.h>
 
@@ -99,10 +98,8 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
-	trace_cpu_frequency_switch_start(freqs.old, freqs.new, policy->cpu);
 	ret = acpuclk_set_rate(policy->cpu, new_freq, SETRATE_CPUFREQ);
 	if (!ret) {
-		trace_cpu_frequency_switch_end(policy->cpu);
 		cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
 	}
 
@@ -236,9 +233,11 @@ int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 	else
 		limit->allowed_max = limit->max;
 
+#if 0
 	pr_debug("%s: Limiting cpu %d min = %d, max = %d\n",
 			__func__, cpu,
 			limit->allowed_min, limit->allowed_max);
+#endif
 
 	return 0;
 }
