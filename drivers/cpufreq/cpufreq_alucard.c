@@ -52,9 +52,9 @@
 #endif
 
 /* Pump Inc/Dec for all cores */
-#define PUMP_INC_STEP_AT_MIN_FREQ	2
-#define PUMP_INC_STEP			2
-#define PUMP_DEC_STEP			1
+#define PUMP_INC_STEP_AT_MIN_FREQ	1
+#define PUMP_INC_STEP			1
+#define PUMP_DEC_STEP			2
 
 static void do_alucard_timer(struct work_struct *work);
 
@@ -108,7 +108,7 @@ static struct alucard_tuners {
 	.dec_cpu_load_at_min_freq = DEC_CPU_LOAD_AT_MIN_FREQ,
 	.dec_cpu_load = DEC_CPU_LOAD,
 	.freq_responsiveness = FREQ_RESPONSIVENESS,
-	.io_is_busy = 0,
+	.io_is_busy = 1,
 	.cpus_up_rate = CPUS_UP_RATE,
 	.cpus_down_rate = CPUS_DOWN_RATE,
 };
