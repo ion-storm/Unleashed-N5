@@ -4,12 +4,14 @@ config="hammerhead_defconfig"
 if [ "$1" == "local" ]; then
 	echo "Local Build"
 	build=/home/defcon/Desktop/Unleashed
-	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.10/bin/arm-cortex_a15-linux-gnueabihf-
+	#export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.10/bin/arm-cortex_a15-linux-gnueabihf-
+	export CROSS_COMPILE=/media/Stuff/dev/arm-hammerhead-linux-gnueabi-4.9.3/bin/arm-eabi-
 	export ENABLE_GRAPHITE=true
 else
 	echo "Remote Build"
 	build=/home/defcon/downloads/
-	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.10/bin/arm-cortex_a15-linux-gnueabihf-
+	#export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.2-2014.10/bin/arm-cortex_a15-linux-gnueabihf-
+	export CROSS_COMPILE=/media/Stuff/dev/arm-hammerhead-linux-gnueabi-4.9.3/bin/arm-eabi-
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
