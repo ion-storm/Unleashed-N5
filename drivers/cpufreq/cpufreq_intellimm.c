@@ -42,9 +42,9 @@
 #define MIN_FREQUENCY_DOWN_DIFFERENTIAL		(1)
 
 #ifdef CONFIG_ARCH_MSM8974
-#define DEF_POWER_SAVE_FREQUENCY		(1100000)
-#define DEF_TWO_PHASE_FREQUENCY			(1700000)
-#define DBS_INPUT_EVENT_MIN_FREQ		(1574400)
+#define DEF_POWER_SAVE_FREQUENCY		(1036800)
+#define DEF_TWO_PHASE_FREQUENCY			(1497600)
+#define DBS_INPUT_EVENT_MIN_FREQ		(1267200)
 #define DEF_FREQUENCY_OPTIMAL			(1190400)
 #define DEF_FREQ_DOWN_STEP			(550000)
 #define DEF_FREQ_DOWN_STEP_BARRIER		(1190400)
@@ -340,7 +340,7 @@ static void update_sampling_rate(unsigned int new_rate)
 			cancel_delayed_work_sync(&dbs_info->work);
 			mutex_lock(&dbs_info->timer_mutex);
 
-			queue_delayed_work_on(dbs_info->cpu, dbs_wq,
+			mod_delayed_work_on(dbs_info->cpu, dbs_wq,
 				&dbs_info->work, usecs_to_jiffies(new_rate));
 
 		}
@@ -1210,7 +1210,7 @@ static void do_dbs_timer(struct work_struct *work)
 	}
 
 sched_wait:
-	queue_delayed_work_on(cpu, dbs_wq, &dbs_info->work, delay);
+	mod_delayed_work_on(cpu, dbs_wq, &dbs_info->work, delay);
 	mutex_unlock(&dbs_info->timer_mutex);
 }
 
@@ -1223,8 +1223,8 @@ static inline void dbs_timer_init(struct cpu_dbs_info_s *dbs_info)
 		delay -= jiffies % delay;
 
 	dbs_info->sample_type = DBS_NORMAL_SAMPLE;
-	INIT_DELAYED_WORK_DEFERRABLE(&dbs_info->work, do_dbs_timer);
-	queue_delayed_work_on(dbs_info->cpu, dbs_wq, &dbs_info->work, delay);
+	INIT_DEFERRABLE_WORK(&dbs_info->work, do_dbs_timer);
+	mod_delayed_work_on(dbs_info->cpu, dbs_wq, &dbs_info->work, delay);
 }
 
 static inline void dbs_timer_exit(struct cpu_dbs_info_s *dbs_info)
