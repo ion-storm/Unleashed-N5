@@ -168,7 +168,7 @@ static int mon_get_mbps(int n, u32 start_val, unsigned int us)
 }
 
 static void do_bw_sample(struct work_struct *work);
-static DECLARE_DEFERRED_WORK(bw_sample, do_bw_sample);
+static DECLARE_DEFERRABLE_WORK(bw_sample, do_bw_sample);
 static struct workqueue_struct *bw_sample_wq;
 
 static DEFINE_MUTEX(bw_lock);
