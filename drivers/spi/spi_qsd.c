@@ -555,7 +555,6 @@ static void msm_spi_read_word_from_fifo(struct msm_spi *dd)
 static inline bool msm_spi_is_valid_state(struct msm_spi *dd)
 {
 	u32 spi_op = readl_relaxed(dd->base + SPI_STATE);
-
 	return spi_op & SPI_OP_STATE_VALID;
 }
 
