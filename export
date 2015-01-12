@@ -3,12 +3,12 @@ export ARCH=arm
 config="hammerhead_defconfig"
 if [ "$1" == "local" ]; then
 	echo "Local Build"
-	build=/home/defcon/Desktop/Unleashed
+	build=/home/kyle/Desktop/Unleashed
 	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.3-2014.11/bin/arm-cortex_a15-linux-gnueabihf-
 	export ENABLE_GRAPHITE=true
 else
 	echo "Remote Build"
-	build=/home/defcon/downloads/
+	build=/home/kyle/Desktop/Unleashed
 	export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.3-2014.11/bin/arm-cortex_a15-linux-gnueabihf-
 	export ENABLE_GRAPHITE=true
 fi
