@@ -13,7 +13,7 @@ else
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
-version="v10u-unleashed"
+version="v11u-unleashed"
 rom="AOSP"
 variant="N5"
 ramdisk="../hammerhead_ramdisk"
@@ -52,7 +52,7 @@ if [ -f out/boot.img ]; then
 		y|Y)
                         DATE_START=$(date +"%s")
 			make "$config"
-			make -j9
+			make -j4
 
 echo "-------------------------"
 echo "Build Completed in:"
@@ -113,10 +113,10 @@ fi
 
 echo "Making ramdisk..."
 if [ -d $ramdisk ]; then
-	#./utilities/mkbootfs $ramdisk | /media/Extra/porting/buildtools/lz4demo -c stdin tmp/ramdisk.lz4
+	#./utilities/mkbootfs $ramdisk | /media/Stuff/dev/build_tools//lz4demo -c stdin tmp/ramdisk.lz4
 	cp -rf $ramdisk/ tmp/
 	rm -rf tmp/hammerhead_ramdisk/.git
-	/media/Extra/porting/buildtools/mkbootfs tmp/hammerhead_ramdisk | gzip > ./tmp/ramdisk.gz
+	/media/Stuff/dev/build_tools/mkbootfs tmp/hammerhead_ramdisk | gzip > ./tmp/ramdisk.gz
 else
 	echo "No ramdisk found..."
 	exit 0;
@@ -124,7 +124,7 @@ fi
 
 echo "Making boot.img..."
 if [ -f tmp/"$kerneltype" ]; then
-	/media/Extra/porting/buildtools/mkbootimg --kernel ./tmp/zImage-dtb --cmdline "$cmdline" --base 0x00000000 --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --ramdisk ./tmp/ramdisk.gz --output out/boot.img
+	/media/Stuff/dev/build_tools/mkbootimg --kernel ./tmp/zImage-dtb --cmdline "$cmdline" --base 0x00000000 --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --ramdisk ./tmp/ramdisk.gz --output out/boot.img
 else
 	echo "No $kerneltype found..."
 	exit 0;
