@@ -13,7 +13,7 @@ else
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
-version="v14u-unleashed"
+version="v15u-unleashed"
 rom="AOSP"
 variant="N5"
 ramdisk="../hammerhead_ramdisk"
