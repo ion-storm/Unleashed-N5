@@ -117,8 +117,7 @@ extern const struct xattr_handler *f2fs_xattr_handlers[];
 
 extern int f2fs_setxattr(struct inode *, int, const char *,
 				const void *, size_t, struct page *, int);
-extern int f2fs_getxattr(struct inode *, int, const char *, void *,
-						size_t, struct page *);
+extern int f2fs_getxattr(struct inode *, int, const char *, void *, size_t);
 extern ssize_t f2fs_listxattr(struct dentry *, char *, size_t);
 #else
 
@@ -129,8 +128,7 @@ static inline int f2fs_setxattr(struct inode *inode, int index,
 	return -EOPNOTSUPP;
 }
 static inline int f2fs_getxattr(struct inode *inode, int index,
-			const char *name, void *buffer,
-			size_t buffer_size, struct page *dpage)
+		const char *name, void *buffer, size_t buffer_size)
 {
 	return -EOPNOTSUPP;
 }
