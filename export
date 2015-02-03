@@ -1,0 +1,162 @@
+#!/bin/bash
+export ARCH=arm
+config="hammerhead_defconfig"
+if [ "$1" == "local" ]; then
+	echo "Local Build"
+	build=/home/kyle/Desktop/Unleashed
+	export CROSS_COMPILE=/media/Stuff/dev/arm-hammerhead-linux-gnueabi-4.9.3/bin/arm-hammerhead-linux-gnueabi-
+	#export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.3-2014.12/bin/arm-cortex_a15-linux-gnueabihf-
+	export ENABLE_GRAPHITE=true
+else
+	echo "Remote Build"
+	build=/home/kyle/Desktop/Unleashed
+	export CROSS_COMPILE=/media/Stuff/dev/arm-hammerhead-linux-gnueabi-4.9.3/bin/arm-hammerhead-linux-gnueabi-
+	#export CROSS_COMPILE=/media/Stuff/dev/linaro_toolchains_2014/arm-cortex_a15-linux-gnueabihf-linaro_4.9.3-2014.12/bin/arm-cortex_a15-linux-gnueabihf-
+	export ENABLE_GRAPHITE=true
+fi
+kernel="defcon"
+version="v17u-unleashed"
+rom="AOSP"
+variant="N5"
+ramdisk="../hammerhead_ramdisk"
+kerneltype="zImage-dtb"
+kerneldir="./out/"
+ps=2048
+base=0x00000000
+ramdisk_offset=0x02900000
+tags_offset=0x02700000
+cmdline='console=ttyHSL0,115200,n8 androidboot.hardware=hammerhead user_debug=31 maxcpus=2 msm_watchdog_v2.enable=1 androidboot.bootdevice=msm_sdcc.1 androidboot.selinux=permissive'
+function cleanme {
+	if [ -f arch/arm/boot/"$kerneltype" ]; then
+		echo "  CLEAN   out"
+	fi
+	rm -rf out/boot.img
+	rm -rf arch/arm/boot/"$kerneltype"
+	rm -rf ./tmp/*
+	mkdir -p ozip/system/lib/modules
+	make clean && make mrproper
+	echo "Working directory cleaned..."
+}
+rm -rf tmp/*
+echo "Checking for build..."
+if [ -f out/boot.img ]; then
+	read -p "Previous build found, clean working directory..(y/n)? : " cchoice
+	case "$cchoice" in
+		y|Y )
+			cleanme;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+	read -p "Begin build now..(y/n)? : " dchoice
+	case "$dchoice" in
+		y|Y)
+                        DATE_START=$(date +"%s")
+			make "$config"
+			make -j4
+
+echo "-------------------------"
+echo "Build Completed in:"
+echo "-------------------------"
+DATE_END=$(date +"%s")
+DIFF=$(($DATE_END - $DATE_START))
+echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
+
+			exit 0;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+fi
+
+echo "Extracting files..."
+if [ -f arch/arm/boot/"$kerneltype" ]; then
+	cp arch/arm/boot/"$kerneltype" ./tmp/
+	mkdir -p out/system/lib/modules
+	#find . -name "*.ko" -exec cp -f {} ozip/system/lib/modules \;
+	find . -name "*.ko" -exec cp -f {} out/system/lib/modules \;
+	if [ -e ozip/system/lib/modules/*.ko ]; then
+		echo "Modules found."
+	else
+		echo "No modules found."
+	fi
+else
+	echo "Nothing has been made..."
+	read -p "Clean working directory..(y/n)? : " achoice
+	case "$achoice" in
+		y|Y )
+			cleanme;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+	read -p "Begin build now..(y/n)? : " bchoice
+	case "$bchoice" in
+		y|Y)
+                        DATE_START=$(date +"%s")
+			make "$config"
+			make -j9
+echo "-------------------------"
+echo "Build Completed in:"
+echo "-------------------------"
+DATE_END=$(date +"%s")
+DIFF=$(($DATE_END - $DATE_START))
+echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
+			exit 0;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+fi
+
+echo "Making ramdisk..."
+if [ -d $ramdisk ]; then
+	#./utilities/mkbootfs $ramdisk | /media/Stuff/dev/build_tools//lz4demo -c stdin tmp/ramdisk.lz4
+	cp -rf $ramdisk/ tmp/
+	rm -rf tmp/hammerhead_ramdisk/.git
+	/media/Stuff/dev/build_tools/mkbootfs tmp/hammerhead_ramdisk | gzip > ./tmp/ramdisk.gz
+else
+	echo "No ramdisk found..."
+	exit 0;
+fi
+
+echo "Making boot.img..."
+if [ -f tmp/"$kerneltype" ]; then
+	/media/Stuff/dev/build_tools/mkbootimg --kernel ./tmp/zImage-dtb --cmdline "$cmdline" --base 0x00000000 --pagesize $ps --ramdisk_offset $ramdisk_offset --tags_offset $tags_offset --ramdisk ./tmp/ramdisk.gz --output out/boot.img
+else
+	echo "No $kerneltype found..."
+	exit 0;
+fi
+
+echo "Zipping Kernel..."
+if [ -f arch/arm/boot/"$kerneltype" ]; then
+	cd out
+	zip -r9 ../"$kernel"-$version-"$rom"_"$variant".zip .
+	mv ../"$kernel"-$version-"$rom"_"$variant".zip $build
+	cd ..
+	echo "cleaning up..."
+	#rm -rf ./tmp/*
+	rm -f out/boot.img
+	rm -f arch/arm/boot/"$kerneltype"
+	rm -rf ./tmp/*
+	echo "Done..."
+	echo "Output zip: $build/$kernel-$version-"$rom"_$variant.zip"
+read -p "Push to device (y/n)? : " cchoice
+	case "$cchoice" in
+		y|Y )
+			adb push $build/$kernel-$version-"$rom"_$variant.zip /sdcard/;;
+		n|N )
+			exit 0;;
+		* )
+			echo "Invalid...";;
+	esac
+	
+else
+	echo "No $kerneltype found..."
+	exit 0;
+fi
+
