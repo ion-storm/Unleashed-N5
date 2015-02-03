@@ -325,7 +325,7 @@ static int lcd_notifier_callback(struct notifier_block *this,
 		break;
 	case LCD_EVENT_OFF_END:
 		INIT_DELAYED_WORK(&suspend_work, bricked_hotplug_suspend);
-		queue_delayed_work_on(0, susp_wq, &suspend_work, 
+		mod_delayed_work_on(0, susp_wq, &suspend_work, 
 				 msecs_to_jiffies(hotplug.suspend_defer_time * 1000)); 
 		break;
 	default:

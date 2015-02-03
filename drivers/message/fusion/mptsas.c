@@ -293,7 +293,7 @@ mptsas_add_fw_event(MPT_ADAPTER *ioc, struct fw_event_work *fw_event,
 	devtprintk(ioc, printk(MYIOC_s_DEBUG_FMT "%s: add (fw_event=0x%p)"
 		"on cpuid %d\n", ioc->name, __func__,
 		fw_event, smp_processor_id()));
-	queue_delayed_work_on(smp_processor_id(), ioc->fw_event_q,
+	mod_delayed_work_on(smp_processor_id(), ioc->fw_event_q,
 	    &fw_event->work, delay);
 	spin_unlock_irqrestore(&ioc->fw_event_lock, flags);
 }
@@ -309,7 +309,7 @@ mptsas_requeue_fw_event(MPT_ADAPTER *ioc, struct fw_event_work *fw_event,
 	    "(fw_event=0x%p)on cpuid %d\n", ioc->name, __func__,
 		fw_event, smp_processor_id()));
 	fw_event->retries++;
-	queue_delayed_work_on(smp_processor_id(), ioc->fw_event_q,
+	mod_delayed_work_on(smp_processor_id(), ioc->fw_event_q,
 	    &fw_event->work, msecs_to_jiffies(delay));
 	spin_unlock_irqrestore(&ioc->fw_event_lock, flags);
 }

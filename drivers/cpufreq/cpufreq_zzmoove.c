@@ -7058,7 +7058,7 @@ static void zz_restartloop_work(struct work_struct *work)
 #endif
 	cancel_delayed_work_sync(&dbs_info->work);
 	flush_workqueue(dbs_wq);
-	queue_delayed_work_on(cpu, dbs_wq, &dbs_info->work, 0);
+	mod_delayed_work_on(cpu, dbs_wq, &dbs_info->work, 0);
 }
 #endif
 
@@ -7429,7 +7429,7 @@ static void do_dbs_timer(struct work_struct *work)
 
 	dbs_check_cpu(dbs_info);
 
-	queue_delayed_work_on(cpu, dbs_wq, &dbs_info->work, delay);
+	mod_delayed_work_on(cpu, dbs_wq, &dbs_info->work, delay);
 	mutex_unlock(&dbs_info->timer_mutex);
 }
 
@@ -7447,9 +7447,9 @@ static inline void dbs_timer_init(struct cpu_dbs_info_s *dbs_info)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	INIT_DEFERRABLE_WORK(&dbs_info->work, do_dbs_timer);
 #else
-	INIT_DELAYED_WORK_DEFERRABLE(&dbs_info->work, do_dbs_timer);
+	INIT_DELAYED_WORK(&dbs_info->work, do_dbs_timer);
 #endif
-	queue_delayed_work_on(dbs_info->cpu, dbs_wq, &dbs_info->work, delay);
+	mod_delayed_work_on(dbs_info->cpu, dbs_wq, &dbs_info->work, delay);
 #ifdef ENABLE_WORK_RESTARTLOOP
 	dbs_info_work = &dbs_info->work;
 #endif
