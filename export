@@ -15,7 +15,7 @@ else
 	export ENABLE_GRAPHITE=true
 fi
 kernel="defcon"
-version="v18u-unleashed"
+version="v19u-unleashed"
 rom="AOSP"
 variant="N5"
 ramdisk="../hammerhead_ramdisk"
